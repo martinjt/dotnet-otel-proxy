@@ -5,7 +5,6 @@ using ProtoBuf;
 
 public class TracesController : Controller
 {
-    private readonly ILogger<TracesController> _logger;
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
 
