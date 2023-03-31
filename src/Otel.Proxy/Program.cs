@@ -8,6 +8,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddGrpc();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 

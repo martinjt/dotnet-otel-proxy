@@ -1,3 +1,4 @@
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenTelemetry()
     .WithTracing(tpb => 
         tpb
+        .ConfigureResource(rs => rs.AddService("sample-proxy-generator"))
         .AddAspNetCoreInstrumentation()
         .AddConsoleExporter()
         .AddOtlpExporter(o => {
