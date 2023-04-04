@@ -27,6 +27,6 @@ public class TracesController : Controller
         content.Headers.Add("x-honeycomb-team", _configuration["HoneycombApiKey"]);
         var result = await _httpClient.PostAsync("https://api.honeycomb.io/v1/traces", content);
 
-        return Results.Ok();
+        return Results.StatusCode((int)result.StatusCode);
     }
 }
