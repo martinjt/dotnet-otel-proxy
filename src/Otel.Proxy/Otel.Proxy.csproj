@@ -7,14 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.22.1" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.52.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.53.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.0" />
-    <PackageReference Include="protobuf-net.AspNetCore" Version="3.2.12" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="otelclasses/**/*" />
+    <Protobuf Include="../../opentelemetry-proto/**/*.proto" GrpcServices="None" ProtoRoot="../../opentelemetry-proto/" Access="Internal"/>
   </ItemGroup>
 
 </Project>

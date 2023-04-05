@@ -1,9 +1,9 @@
-using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using OpenTelemetry.Proto.Collector.Trace.V1;
-using ProtoBuf;
 
-public class TracesController : Controller
+namespace Otel.Proxy.Controllers;
+
+internal class TracesController : Controller
 {
     private readonly TraceRepository _traceRepository;
     private readonly TraceProcessor _traceProcessor;
@@ -23,7 +23,7 @@ public class TracesController : Controller
                 ss => ss.Spans.Select(s => s.TraceId)
             )))
             {
-                await _traceProcessor.ProcessTrace(traceId);
+                await _traceProcessor.ProcessTrace(traceId.Memory.ToArray());
             }
         
         return Results.Accepted();

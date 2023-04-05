@@ -1,7 +1,10 @@
+using Otel.Proxy.Setup;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers()
-    .AddProtoBufNet();
+builder.Services.AddControllers(o => o.InputFormatters.Add(new ProtobufInputFormatter()))
+    .ConfigureApplicationPartManager(o => 
+        o.FeatureProviders.Add(new InternalControllerFeatureProvider()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();

@@ -3,9 +3,9 @@ using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Resource.V1;
 using OpenTelemetry.Proto.Trace.V1;
 
-public class TraceRepository
+internal class TraceRepository
 {
-    public ConcurrentDictionary<byte[], ConcurrentBag<SpanRecord>> SpanDictionary = new();
+    private ConcurrentDictionary<byte[], ConcurrentBag<SpanRecord>> SpanDictionary = new();
 
     public void AddSpans(ExportTraceServiceRequest request)
     {
@@ -20,7 +20,7 @@ public class TraceRepository
                     Spans = grouping.ToList(),
                     Resource = resourceSpan.Resource
                 };
-                var records = SpanDictionary.GetOrAdd(traceId,  
+                var records = SpanDictionary.GetOrAdd(traceId.Memory.ToArray(),  
                     (b) => new ConcurrentBag<SpanRecord>());
                 records.Add(record);
             }
@@ -35,7 +35,7 @@ public class TraceRepository
     }
 }
 
-public class SpanRecord
+internal class SpanRecord
 {
     public List<Span> Spans { get; set; } = new();
     public Resource Resource { get; set; } = new();

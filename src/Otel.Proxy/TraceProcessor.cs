@@ -1,9 +1,9 @@
 using System.Net.Http.Headers;
+using Google.Protobuf;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Trace.V1;
-using ProtoBuf;
 
-public class TraceProcessor
+internal class TraceProcessor
 {
     private readonly TraceRepository _traceRepository;
     private readonly HttpClient _httpClient;
@@ -43,14 +43,11 @@ public class TraceProcessor
 
     private async Task SendRequestToHoneycomb(ExportTraceServiceRequest exportRequest)
     {
-        using var ms = new MemoryStream();
-
-        var content = new StreamContent(ms);
-        Serializer.Serialize(ms, exportRequest);
-        ms.Seek(0, SeekOrigin.Begin);
+        var content = new ByteArrayContent(exportRequest.ToByteArray());
 
         content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
         content.Headers.Add("x-honeycomb-team", _configuration["HoneycombApiKey"]);
-        await _httpClient.PostAsync("https://api.honeycomb.io/v1/traces", content);
+        await _httpClient.PostAsync("https://api.honeycomb.io/v1/traces", 
+            new ByteArrayContent(exportRequest.ToByteArray()));
     }
 }
