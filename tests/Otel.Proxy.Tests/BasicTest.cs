@@ -11,13 +11,13 @@ public class SuccessTests
 
 
     [Fact]
-    public async Task SingleSpan_Returns200()
+    public async Task SingleSpan_Returns204()
     {
         var exportRequest = TraceGenerator.CreateValidTraceExport();
 
         var result = await _api.PostExportRequest(exportRequest);
 
-        result.StatusCode.ShouldBe(HttpStatusCode.OK);
+        result.StatusCode.ShouldBe(HttpStatusCode.Accepted);
     }
 
     [Fact]

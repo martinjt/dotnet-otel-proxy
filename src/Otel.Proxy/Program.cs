@@ -5,6 +5,8 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<TraceProcessor>();
+builder.Services.AddSingleton<TraceRepository>();
 
 var app = builder.Build();
 

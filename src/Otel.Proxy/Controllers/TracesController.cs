@@ -5,28 +5,27 @@ using ProtoBuf;
 
 public class TracesController : Controller
 {
-    private readonly HttpClient _httpClient;
-    private readonly IConfiguration _configuration;
+    private readonly TraceRepository _traceRepository;
+    private readonly TraceProcessor _traceProcessor;
 
-    public TracesController(HttpClient httpClient, IConfiguration configuration)
+    public TracesController(TraceRepository traceRepository, TraceProcessor traceProcessor)
     {
-        _httpClient = httpClient;
-        _configuration = configuration;
+        _traceRepository = traceRepository;
+        _traceProcessor = traceProcessor;
     }
 
     [HttpPost("/v1/traces")]
     public async Task<IResult> PostTrace([FromBody]ExportTraceServiceRequest exportRequest)
     {
-        using var ms = new MemoryStream();
-
-        var content = new StreamContent(ms);
-        Serializer.Serialize(ms, exportRequest);
-        ms.Seek(0, SeekOrigin.Begin);
-
-        content.Headers.ContentType = new MediaTypeHeaderValue(Request.ContentType!);
-        content.Headers.Add("x-honeycomb-team", _configuration["HoneycombApiKey"]);
-        var result = await _httpClient.PostAsync("https://api.honeycomb.io/v1/traces", content);
-
-        return Results.StatusCode((int)result.StatusCode);
+        _traceRepository.AddSpans(exportRequest);
+        foreach (var traceId in exportRequest.ResourceSpans.SelectMany(
+            rs => rs.ScopeSpans.SelectMany(
+                ss => ss.Spans.Select(s => s.TraceId)
+            )))
+            {
+                await _traceProcessor.ProcessTrace(traceId);
+            }
+        
+        return Results.Accepted();
     }
 }
