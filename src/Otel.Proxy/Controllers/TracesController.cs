@@ -23,7 +23,7 @@ public class TracesController : Controller
                 ss => ss.Spans.Select(s => s.TraceId)
             )))
             {
-                await _traceProcessor.ProcessTrace(traceId);
+                await _traceProcessor.ProcessTrace(traceId.Memory.ToArray());
             }
         
         return Results.Accepted();

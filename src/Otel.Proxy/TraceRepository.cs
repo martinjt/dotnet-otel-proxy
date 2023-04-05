@@ -20,7 +20,7 @@ public class TraceRepository
                     Spans = grouping.ToList(),
                     Resource = resourceSpan.Resource
                 };
-                var records = SpanDictionary.GetOrAdd(traceId,  
+                var records = SpanDictionary.GetOrAdd(traceId.Memory.ToArray(),  
                     (b) => new ConcurrentBag<SpanRecord>());
                 records.Add(record);
             }
