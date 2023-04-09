@@ -38,5 +38,20 @@ public class SuccessTests
             .Value.StringValue.ShouldBe(serviceName);
     }
 
+    public async Task SingleSpan_DoesNotSendIfNoRootSpan()
+    {
+        var requestBuilder = new ExportServiceRequestBuilder()
+            .WithService("service1")
+            .WithService("service2")
+            .WithTrace(trace => 
+                trace.WithRootSpan(rootSpan => 
+                    rootSpan.WithChildSpan(o => 
+                        o
+                        .WithAttribute("myattribute", "myvalue")
+                        .ForService("service1")
+                    )
+                    .ForService("test-service")
+            ));
+    }
     
 }
