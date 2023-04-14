@@ -24,7 +24,11 @@ public class SuccessTests
     public async Task SingleSpan_SpanForwardedToHoneycomb()
     {
         var serviceName = Guid.NewGuid().ToString();
-        var exportRequest = TraceGenerator.CreateValidTraceExport(serviceName);
+        var exportRequest = new ExportServiceRequestBuilder()
+            .WithService(serviceName)
+            .WithTrace(o => o
+                .WithRootSpan().ForService(serviceName))
+            .Build();
 
         var result = await _api.PostExportRequest(exportRequest);
 
@@ -33,9 +37,7 @@ public class SuccessTests
         exportedData.ShouldNotBeNull();
         exportedData.ResourceSpans
             .First()
-            .Resource.Attributes
-            .FirstOrDefault(a => a.Key == "service.name")?
-            .Value.StringValue.ShouldBe(serviceName);
+            .ScopeSpans.ShouldHaveSingleItem();
     }
 
     public async Task SingleSpan_DoesNotSendIfNoRootSpan()

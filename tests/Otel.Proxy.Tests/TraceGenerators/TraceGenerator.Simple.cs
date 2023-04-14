@@ -80,8 +80,8 @@ public class ExportServiceRequestBuilder
     public ExportServiceRequestBuilder WithTrace(Action<TraceBuilder> traceOptions)
     {
         var traceBuilder = new TraceBuilder();
-        traceOptions.Invoke(new TraceBuilder());
         _traceBuilders.Add(traceBuilder);
+        traceOptions.Invoke(traceBuilder);
         return this;
     }
 
@@ -93,7 +93,7 @@ public class ExportServiceRequestBuilder
         {
             var serviceName = resource
                 .Attributes
-                .First(s => s.Value.StringValue == "service.name").Value.StringValue;
+                .First(s => s.Key == "service.name").Value.StringValue;
             var resourceSpans = new ResourceSpans {
                 Resource = resource
             };
@@ -135,11 +135,11 @@ public class TraceBuilder
         _traceId = traceId ?? ActivityTraceId.CreateRandom();
     }
 
-    public SpanBuilder WithRootSpan(Action<SpanBuilder> spanBuilder)
+    public SpanBuilder WithRootSpan(Action<SpanBuilder> spanBuilder = null!)
     {
         var spanBuilderObject = new SpanBuilder(_traceId!.Value);
         Spans.Add(spanBuilderObject);
-        spanBuilder.Invoke(spanBuilderObject);
+        spanBuilder?.Invoke(spanBuilderObject);
         return spanBuilderObject;
     }
 
