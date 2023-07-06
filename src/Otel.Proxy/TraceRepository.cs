@@ -5,7 +5,7 @@ using OpenTelemetry.Proto.Trace.V1;
 
 internal class TraceRepository
 {
-    private ConcurrentDictionary<byte[], ConcurrentBag<SpanRecord>> SpanDictionary = new();
+    private ConcurrentDictionary<string, ConcurrentBag<SpanRecord>> SpanDictionary = new();
 
     public void AddSpans(ExportTraceServiceRequest request)
     {
@@ -20,7 +20,7 @@ internal class TraceRepository
                     Spans = grouping.ToList(),
                     Resource = resourceSpan.Resource
                 };
-                var records = SpanDictionary.GetOrAdd(traceId.Memory.ToArray(),  
+                var records = SpanDictionary.GetOrAdd(System.Text.Encoding.UTF8.GetString(traceId.Memory.ToArray()),  
                     (b) => new ConcurrentBag<SpanRecord>());
                 records.Add(record);
             }
@@ -28,7 +28,7 @@ internal class TraceRepository
 
     public IEnumerable<SpanRecord> GetTrace(byte[] traceId)
     {
-        if (!SpanDictionary.TryGetValue(traceId, out var record))
+        if (!SpanDictionary.TryGetValue(System.Text.Encoding.UTF8.GetString(traceId), out var record))
             return Enumerable.Empty<SpanRecord>();
         
         return record;
