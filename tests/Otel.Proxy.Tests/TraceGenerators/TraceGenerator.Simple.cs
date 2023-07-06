@@ -105,7 +105,7 @@ public class ExportServiceRequestBuilder
                         .SelectMany(s => s.GetSpansForService(serviceName))
                         .Select(s => {
                             var scoped = new ScopeSpans();
-                            var span = new Span();
+                            var span = s.ConvertToSpan();
                             span.Attributes.AddRange(s.Attributes.Select(a => new KeyValue {
                                 Key = a.Key,
                                 Value = new AnyValue { StringValue = a.Value.ToString() }
@@ -138,6 +138,16 @@ public class TraceBuilder
     public SpanBuilder WithRootSpan(Action<SpanBuilder> spanBuilder = null!)
     {
         var spanBuilderObject = new SpanBuilder(_traceId!.Value);
+        Spans.Add(spanBuilderObject);
+        spanBuilder?.Invoke(spanBuilderObject);
+        return spanBuilderObject;
+    }
+
+    public SpanBuilder WithSpan(Action<SpanBuilder> spanBuilder = null!, 
+        ActivitySpanId? spanId = null!,
+        ActivitySpanId? parentSpanId = null!)
+    {
+        var spanBuilderObject = new SpanBuilder(_traceId!.Value, spanId, parentSpanId);
         Spans.Add(spanBuilderObject);
         spanBuilder?.Invoke(spanBuilderObject);
         return spanBuilderObject;
@@ -205,5 +215,15 @@ public class SpanBuilder
 
         list.AddRange(ChildSpans.SelectMany(s => s.GetSpansForService(serviceName)));
         return list;
+    }
+
+    public Span ConvertToSpan()
+    {
+        var span = new Span();
+        span.SpanId = System.Text.Encoding.UTF8.GetBytes(_spanId.Value.ToString());
+        span.ParentSpanId = _parentSpanId.HasValue ? System.Text.Encoding.UTF8.GetBytes(_parentSpanId.Value.ToString()) : default;
+        span.TraceId = System.Text.Encoding.UTF8.GetBytes(_traceId.ToString());
+
+        return span;
     }
 }

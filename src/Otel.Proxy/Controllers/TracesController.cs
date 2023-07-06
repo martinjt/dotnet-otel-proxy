@@ -20,7 +20,9 @@ internal class TracesController : Controller
         _traceRepository.AddSpans(exportRequest);
         foreach (var traceId in exportRequest.ResourceSpans.SelectMany(
             rs => rs.ScopeSpans.SelectMany(
-                ss => ss.Spans.Select(s => s.TraceId)
+                ss => ss.Spans
+                .Where(span => span.ParentSpanId.IsEmpty)
+                .Select(s => s.TraceId)
             )))
             {
                 await _traceProcessor.ProcessTrace(traceId.Memory.ToArray());

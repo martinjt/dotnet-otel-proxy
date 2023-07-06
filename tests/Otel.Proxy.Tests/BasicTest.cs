@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using Otel.Proxy.Tests.Setup;
 using Shouldly;
@@ -21,7 +22,7 @@ public class SuccessTests
     }
 
     [Fact]
-    public async Task SingleSpan_SpanForwardedToHoneycomb()
+    public async Task SingleRootSpan_SpanForwardedToHoneycomb()
     {
         var serviceName = Guid.NewGuid().ToString();
         var exportRequest = new ExportServiceRequestBuilder()
@@ -40,20 +41,22 @@ public class SuccessTests
             .ScopeSpans.ShouldHaveSingleItem();
     }
 
-    public async Task SingleSpan_DoesNotSendIfNoRootSpan()
+    [Fact]
+    public async Task SingleChildSpan_DoesNotSend()
     {
-        var requestBuilder = new ExportServiceRequestBuilder()
+        var exportRequest = new ExportServiceRequestBuilder()
             .WithService("service1")
-            .WithService("service2")
             .WithTrace(trace => 
-                trace.WithRootSpan(rootSpan => 
-                    rootSpan.WithChildSpan(o => 
-                        o
-                        .WithAttribute("myattribute", "myvalue")
-                        .ForService("service1")
+                trace.WithSpan(span => 
+                    span.WithAttribute("myattribute", "myvalue")
+                        .ForService("service1"),
+                        parentSpanId: ActivitySpanId.CreateRandom()
                     )
-                    .ForService("test-service")
-            ));
+            ).Build();
+
+        var result = await _api.PostExportRequest(exportRequest);
+
+        _server.ReceivedExportRequests.ShouldBeEmpty();
     }
     
 }
