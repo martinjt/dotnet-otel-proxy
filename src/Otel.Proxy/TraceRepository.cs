@@ -3,7 +3,7 @@ using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Resource.V1;
 using OpenTelemetry.Proto.Trace.V1;
 
-internal class TraceRepository
+internal class InMemoryTraceRepository : ITraceRepository
 {
     private ConcurrentDictionary<string, ConcurrentBag<SpanRecord>> SpanDictionary = new();
 
@@ -33,6 +33,12 @@ internal class TraceRepository
         
         return record;
     }
+}
+
+internal interface ITraceRepository
+{
+    void AddSpans(ExportTraceServiceRequest request);
+    IEnumerable<SpanRecord> GetTrace(byte[] traceId);
 }
 
 internal class SpanRecord

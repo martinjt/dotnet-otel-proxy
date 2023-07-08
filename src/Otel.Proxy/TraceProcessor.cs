@@ -5,12 +5,12 @@ using OpenTelemetry.Proto.Trace.V1;
 
 internal class TraceProcessor
 {
-    private readonly TraceRepository _traceRepository;
+    private readonly ITraceRepository _traceRepository;
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
 
     public TraceProcessor(
-        TraceRepository traceRepository,
+        ITraceRepository traceRepository,
         HttpClient httpClient,
         IConfiguration configuration)
     {

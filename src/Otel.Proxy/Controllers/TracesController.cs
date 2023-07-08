@@ -5,10 +5,10 @@ namespace Otel.Proxy.Controllers;
 
 internal class TracesController : Controller
 {
-    private readonly TraceRepository _traceRepository;
+    private readonly ITraceRepository _traceRepository;
     private readonly TraceProcessor _traceProcessor;
 
-    public TracesController(TraceRepository traceRepository, TraceProcessor traceProcessor)
+    public TracesController(ITraceRepository traceRepository, TraceProcessor traceProcessor)
     {
         _traceRepository = traceRepository;
         _traceProcessor = traceProcessor;

@@ -9,7 +9,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<TraceProcessor>();
-builder.Services.AddSingleton<TraceRepository>();
+builder.Services.AddSingleton<ITraceRepository, InMemoryTraceRepository>();
 
 var app = builder.Build();
 
