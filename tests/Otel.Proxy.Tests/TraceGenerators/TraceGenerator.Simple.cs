@@ -85,6 +85,14 @@ public class ExportServiceRequestBuilder
         return this;
     }
 
+    public ExportServiceRequestBuilder WithTrace(ActivityTraceId traceId, Action<TraceBuilder> traceOptions)
+    {
+        var traceBuilder = new TraceBuilder(traceId);
+        _traceBuilders.Add(traceBuilder);
+        traceOptions.Invoke(traceBuilder);
+        return this;
+    }
+
     public ExportTraceServiceRequest Build()
     {
         var exportRequest = new ExportTraceServiceRequest();
