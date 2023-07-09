@@ -25,6 +25,8 @@ public class OtelProxyAppFactory : WebApplicationFactory<Program>
             .AddAttributes(new List<KeyValuePair<string, object>>
                 {
                     new("test.run_id", Guid.NewGuid().ToString("N")),
+                    new("test.start_time", DateTime.UtcNow.ToString("O")),
+                    new("test.start_ticks", DateTime.UtcNow.Ticks)
                 }))
         .AddSource(BaseTest.Source.Name)
         .SetSampler<AlwaysOnSampler>()

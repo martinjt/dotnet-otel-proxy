@@ -18,7 +18,7 @@ internal class TracesController : Controller
     [HttpPost("/v1/traces")]
     public async Task<IResult> PostTrace([FromBody]ExportTraceServiceRequest exportRequest)
     {
-        _traceRepository.AddSpans(exportRequest);
+        await _traceRepository.AddSpans(exportRequest);
         foreach (var traceId in exportRequest.ResourceSpans.SelectMany(
             rs => rs.ScopeSpans.SelectMany(
                 ss => ss.Spans

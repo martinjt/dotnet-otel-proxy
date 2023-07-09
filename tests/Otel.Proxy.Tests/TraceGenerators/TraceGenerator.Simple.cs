@@ -3,6 +3,7 @@ using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Resource.V1;
 using OpenTelemetry.Proto.Trace.V1;
+using System.Text;
 
 internal static partial class TraceGenerator
 {
@@ -18,8 +19,8 @@ internal static partial class TraceGenerator
         var spans = new ScopeSpans();
         spans.Spans.Add(new Span
         {
-            TraceId = GenerateRandomTraceId(),
-            SpanId = GenerateRandomSpanId(),
+            TraceId = Encoding.UTF8.GetBytes(ActivityTraceId.CreateRandom().ToString()),
+            SpanId = Encoding.UTF8.GetBytes(ActivitySpanId.CreateRandom().ToString()),
             Attributes = {
                 { new KeyValue {
                     Key = "my_attribute",

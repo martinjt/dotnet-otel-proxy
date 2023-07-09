@@ -14,11 +14,12 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.0" />
+    <PackageReference Include="NRedisStack" Version="0.8.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="../../opentelemetry-proto/**/*.proto" GrpcServices="None" ProtoRoot="../../opentelemetry-proto/" Access="Internal"/>
+    <Protobuf Include="../../opentelemetry-proto/**/*.proto" GrpcServices="None" ProtoRoot="../../opentelemetry-proto/" Access="Internal" />
   </ItemGroup>
 
 </Project>
