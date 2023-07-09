@@ -5,18 +5,15 @@ using Shouldly;
 
 namespace Otel.Proxy.Tests;
 
-public class SuccessTests
+
+public class SuccessTests : BaseTest
 {
-    private readonly OtelProxyAppFactory _server = new OtelProxyAppFactory();
-    private HttpClient _api => _server.CreateClient();
-
-
     [Fact]
     public async Task SingleSpan_Returns204()
     {
         var exportRequest = TraceGenerator.CreateValidTraceExport();
 
-        var result = await _api.PostExportRequest(exportRequest);
+        var result = await Api.PostExportRequest(exportRequest);
 
         result.StatusCode.ShouldBe(HttpStatusCode.Accepted);
     }
@@ -31,9 +28,9 @@ public class SuccessTests
                 .WithRootSpan().ForService(serviceName))
             .Build();
 
-        var result = await _api.PostExportRequest(exportRequest);
+        var result = await Api.PostExportRequest(exportRequest);
 
-        var exportedData = _server.ReceivedExportRequests.First();
+        var exportedData = RecordedExportRequests.First();
 
         exportedData.ShouldNotBeNull();
         exportedData.ResourceSpans
@@ -54,9 +51,9 @@ public class SuccessTests
                     )
             ).Build();
 
-        var result = await _api.PostExportRequest(exportRequest);
+        var result = await Api.PostExportRequest(exportRequest);
 
-        _server.ReceivedExportRequests.ShouldBeEmpty();
+        RecordedExportRequests.ShouldBeEmpty();
     }
 
     [Fact]
@@ -74,7 +71,7 @@ public class SuccessTests
                     )
             ).Build();
 
-        await _api.PostExportRequest(childSpanOnlyRequest);
+        await Api.PostExportRequest(childSpanOnlyRequest);
 
         var rootSpanOnlyRequest = new ExportServiceRequestBuilder()
             .WithService("service1")
@@ -86,10 +83,10 @@ public class SuccessTests
                     )
             ).Build();
 
-        await _api.PostExportRequest(rootSpanOnlyRequest);
-        _server.ReceivedExportRequests.ShouldNotBeEmpty();
-        _server.ReceivedExportRequests.ShouldHaveSingleItem();
-        var exportedData = _server.ReceivedExportRequests.First();
+        await Api.PostExportRequest(rootSpanOnlyRequest);
+        RecordedExportRequests.ShouldNotBeEmpty();
+        RecordedExportRequests.ShouldHaveSingleItem();
+        var exportedData = RecordedExportRequests.First();
         exportedData.ResourceSpans.Count().ShouldBe(2);
     }
 
@@ -106,7 +103,7 @@ public class SuccessTests
                     )
             ).Build();
 
-        await _api.PostExportRequest(childSpanOnlyRequest);
+        await Api.PostExportRequest(childSpanOnlyRequest);
 
         var rootSpanOnlyRequest = new ExportServiceRequestBuilder()
             .WithService("service1")
@@ -117,10 +114,10 @@ public class SuccessTests
                     )
             ).Build();
 
-        await _api.PostExportRequest(rootSpanOnlyRequest);
-        _server.ReceivedExportRequests.ShouldNotBeEmpty();
-        _server.ReceivedExportRequests.ShouldHaveSingleItem();
-        var exportedData = _server.ReceivedExportRequests.First();
+        await Api.PostExportRequest(rootSpanOnlyRequest);
+        RecordedExportRequests.ShouldNotBeEmpty();
+        RecordedExportRequests.ShouldHaveSingleItem();
+        var exportedData = RecordedExportRequests.First();
         exportedData.ResourceSpans.Count().ShouldBe(1);
     }
 

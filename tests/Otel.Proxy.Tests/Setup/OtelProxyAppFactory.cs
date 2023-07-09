@@ -6,6 +6,10 @@ using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using ProtoBuf;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Resources;
+using System.Diagnostics;
 
 namespace Otel.Proxy.Tests.Setup;
 
@@ -13,9 +17,39 @@ public class OtelProxyAppFactory : WebApplicationFactory<Program>
 {
     public List<ExportTraceServiceRequest> ReceivedExportRequests = new();
     private readonly HttpClientInterceptorOptions _httpClientInterceptorOptions = new();
+    private static bool RegisteredExceptionHandler = false;
+
+    public static TracerProvider? TracerProvider = Sdk.CreateTracerProviderBuilder()
+        .ConfigureResource(r => r
+            .AddService("Otel Proxy Tests")
+            .AddAttributes(new List<KeyValuePair<string, object>>
+                {
+                    new("test.run_id", Guid.NewGuid().ToString("N")),
+                }))
+        .AddSource(BaseTest.Source.Name)
+        .SetSampler<AlwaysOnSampler>()
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter(otlpOptions =>
+        {
+            otlpOptions.Endpoint = new Uri($"https://api.honeycomb.io:443");
+            otlpOptions.Headers = string.Join(",", new List<string>
+            {
+                "x-otlp-version=0.17.0",
+                $"x-honeycomb-team={Environment.GetEnvironmentVariable("HONEYCOMB_API_KEY")}"
+            });
+        })
+        .Build();
 
     public OtelProxyAppFactory()
     {
+        if (!RegisteredExceptionHandler)
+            AppDomain.CurrentDomain.FirstChanceException += (_, args) =>
+            {
+                if (args.Exception.Source == "Shouldly" ||
+                    args.Exception.Source == "xunit.assert")
+                    Activity.Current?.AddTag("test.outcome", "failed");
+            };
         SetupInterceptor();
     }
 
@@ -25,7 +59,10 @@ public class OtelProxyAppFactory : WebApplicationFactory<Program>
             services.AddLogging(l => l.ClearProviders());
             services.AddSingleton<IHttpMessageHandlerBuilderFilter>(
                 _ => new HttpClientInterceptionFilter(_httpClientInterceptorOptions));
+            if (TracerProvider != null)
+                services.AddSingleton(TracerProvider);
         });
+
         base.ConfigureWebHost(builder);
     }
 
