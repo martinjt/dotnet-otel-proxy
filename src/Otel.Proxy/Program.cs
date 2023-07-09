@@ -1,4 +1,5 @@
 using Otel.Proxy.Setup;
+using Otel.Proxy.TraceRepository;
 
 var builder = WebApplication.CreateBuilder(args);
 
