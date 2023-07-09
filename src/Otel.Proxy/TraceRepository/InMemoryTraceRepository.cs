@@ -1,13 +1,13 @@
 using System.Collections.Concurrent;
 using OpenTelemetry.Proto.Collector.Trace.V1;
-using OpenTelemetry.Proto.Resource.V1;
-using OpenTelemetry.Proto.Trace.V1;
+
+namespace Otel.Proxy.TraceRepository;
 
 internal class InMemoryTraceRepository : ITraceRepository
 {
     private ConcurrentDictionary<string, ConcurrentBag<SpanRecord>> SpanDictionary = new();
 
-    public void AddSpans(ExportTraceServiceRequest request)
+    public Task AddSpans(ExportTraceServiceRequest request)
     {
         foreach (var resourceSpan in request.ResourceSpans)
         foreach (var grouping in resourceSpan
@@ -24,26 +24,16 @@ internal class InMemoryTraceRepository : ITraceRepository
                     (b) => new ConcurrentBag<SpanRecord>());
                 records.Add(record);
             }
+
+        return Task.CompletedTask;
     }
 
-    public IEnumerable<SpanRecord> GetTrace(byte[] traceId)
+    public Task<IEnumerable<SpanRecord>> GetTrace(byte[] traceId)
     {
         if (!SpanDictionary.TryGetValue(System.Text.Encoding.UTF8.GetString(traceId), out var record))
-            return Enumerable.Empty<SpanRecord>();
+            return Task.FromResult(Enumerable.Empty<SpanRecord>());
         
-        return record;
+        return Task.FromResult(record as IEnumerable<SpanRecord>);
     }
-}
-
-internal interface ITraceRepository
-{
-    void AddSpans(ExportTraceServiceRequest request);
-    IEnumerable<SpanRecord> GetTrace(byte[] traceId);
-}
-
-internal class SpanRecord
-{
-    public List<Span> Spans { get; set; } = new();
-    public Resource Resource { get; set; } = new();
 }
 

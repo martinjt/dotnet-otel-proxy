@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using Google.Protobuf;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Trace.V1;
+using Otel.Proxy.TraceRepository;
 
 internal class TraceProcessor
 {
@@ -21,7 +22,7 @@ internal class TraceProcessor
 
     public async Task ProcessTrace(byte[] traceId)
     {
-        var trace = _traceRepository.GetTrace(traceId);
+        var trace = await _traceRepository.GetTrace(traceId);
         
         var exportRequest = new ExportTraceServiceRequest();
         exportRequest.ResourceSpans.AddRange(

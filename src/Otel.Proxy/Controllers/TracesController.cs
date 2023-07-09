@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenTelemetry.Proto.Collector.Trace.V1;
+using Otel.Proxy.TraceRepository;
 
 namespace Otel.Proxy.Controllers;
 
