@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="../../opentelemetry-proto/**/*.proto" GrpcServices="None" ProtoRoot="../../opentelemetry-proto/" Access="Internal" />
+    <Protobuf Include="../../opentelemetry-proto/**/*.proto" GrpcServices="Server" ProtoRoot="../../opentelemetry-proto/" Access="Internal" />
   </ItemGroup>
 
 </Project>
