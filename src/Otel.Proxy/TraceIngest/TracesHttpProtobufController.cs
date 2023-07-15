@@ -4,12 +4,12 @@ using Otel.Proxy.TraceRepository;
 
 namespace Otel.Proxy.Controllers;
 
-internal class TracesController : Controller
+internal class TracesHttpProtobufController : Controller
 {
     private readonly ITraceRepository _traceRepository;
     private readonly TraceProcessor _traceProcessor;
 
-    public TracesController(ITraceRepository traceRepository, TraceProcessor traceProcessor)
+    public TracesHttpProtobufController(ITraceRepository traceRepository, TraceProcessor traceProcessor)
     {
         _traceRepository = traceRepository;
         _traceProcessor = traceProcessor;

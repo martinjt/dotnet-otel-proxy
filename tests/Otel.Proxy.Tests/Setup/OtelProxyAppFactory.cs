@@ -10,6 +10,8 @@ using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Http.Features;
+using System.Net;
 
 namespace Otel.Proxy.Tests.Setup;
 
@@ -66,6 +68,24 @@ public class OtelProxyAppFactory : WebApplicationFactory<Program>
         });
 
         base.ConfigureWebHost(builder);
+    }
+
+    public HttpClient CreateHTTPClient()
+    {
+        HttpClient client;
+        var serverHandler = Server.CreateHandler(o => {
+            o.Features.Set<IHttpConnectionFeature>(new HttpConnectionFeature
+            {
+                LocalIpAddress = IPAddress.Loopback,
+                LocalPort = 4318
+            });
+        });
+
+        client = new HttpClient(serverHandler);
+
+        ConfigureClient(client);
+
+        return client;
     }
 
     private void SetupInterceptor()

@@ -18,7 +18,7 @@ public abstract class BaseTest : IAsyncLifetime
     public BaseTest()
     {
         _server = new OtelProxyAppFactory();
-        Api = _server.CreateClient();
+        Api = _server.CreateHTTPClient();
         _testActivity = Source.StartActivity("Test Started");
         if (_testActivity != null)
             Api.DefaultRequestHeaders.Add("traceparent", 
