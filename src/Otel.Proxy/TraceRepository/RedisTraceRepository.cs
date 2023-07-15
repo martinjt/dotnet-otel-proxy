@@ -18,7 +18,6 @@ internal class RedisTraceRepository : ITraceRepository
 
     public async Task AddSpans(ExportTraceServiceRequest request)
     {
-        var json = _database.JSON();
         foreach (var resourceSpan in request.ResourceSpans)
             foreach (var grouping in resourceSpan
                 .ScopeSpans.SelectMany(ss => ss.Spans)
@@ -48,7 +47,6 @@ internal class RedisTraceRepository : ITraceRepository
 
     public async Task<IEnumerable<SpanRecord>> GetTrace(byte[] traceIdBytes)
     {
-        var json = _database.JSON();
         var traceId = System.Text.Encoding.UTF8.GetString(traceIdBytes);
 
         var listResults = await _database.ListRangeAsync(traceId);
