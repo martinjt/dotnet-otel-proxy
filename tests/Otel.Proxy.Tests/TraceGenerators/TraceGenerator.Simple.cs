@@ -174,7 +174,7 @@ public class TraceBuilder
 public class SpanBuilder
 {
     private readonly ActivityTraceId _traceId;
-    private readonly ActivitySpanId? _spanId;
+    private readonly ActivitySpanId _spanId;
     private readonly ActivitySpanId? _parentSpanId;
     public List<KeyValuePair<string, object>> Attributes { get; } = new();
 
@@ -229,7 +229,7 @@ public class SpanBuilder
     public Span ConvertToSpan()
     {
         var span = new Span();
-        span.SpanId = System.Text.Encoding.UTF8.GetBytes(_spanId.Value.ToString());
+        span.SpanId = System.Text.Encoding.UTF8.GetBytes(_spanId.ToString());
         span.ParentSpanId = _parentSpanId.HasValue ? System.Text.Encoding.UTF8.GetBytes(_parentSpanId.Value.ToString()) : default;
         span.TraceId = System.Text.Encoding.UTF8.GetBytes(_traceId.ToString());
 

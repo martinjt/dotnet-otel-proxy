@@ -28,6 +28,9 @@ builder.Services.AddSingleton<ITraceRepository>(sp =>
     }
     else
     {
+        if (string.IsNullOrEmpty(backendSettings.Value.RedisConnectionString))
+            throw new ArgumentException("You must provide a Redis connection string when using Redis backend");
+
         var redis = ConnectionMultiplexer.Connect(backendSettings.Value.RedisConnectionString);
         return new RedisTraceRepository(redis.GetDatabase());
     }
