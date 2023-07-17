@@ -2,12 +2,19 @@ using System.Diagnostics;
 using System.Net;
 using Otel.Proxy.Tests.Setup;
 using Shouldly;
+using Xunit.Abstractions;
 
 namespace Otel.Proxy.Tests;
 
 
 public class SuccessTests : BaseTest
 {
+    public SuccessTests(OTelFixture fixture, ITestOutputHelper testOutputHelper) 
+        : base(fixture, testOutputHelper)
+    {
+
+    }
+
     [Fact]
     public async Task SingleSpan_Returns204()
     {

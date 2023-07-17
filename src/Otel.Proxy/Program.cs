@@ -18,13 +18,28 @@ builder.Services.AddOptions<BackendSettings>().Bind(builder.Configuration.GetSec
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<TraceProcessor>();
+builder.Services.AddSingleton<InMemoryTraceStore>();
+builder.Services.AddSingleton<TenantInMemoryStoreAccessor>();
 builder.Services.AddSingleton<ITraceRepository>(sp =>
 {
     var backendSettings = sp.GetRequiredService<IOptions<BackendSettings>>();
     if (backendSettings.Value.Type == BackendSettings.BackendType.InMemory)
     {
-        return new InMemoryTraceRepository();
+        if (backendSettings.Value.IsMultiTenant)
+            return new InMemoryTraceRepository(() => {
+                var httpAccessor = sp.GetRequiredService<IHttpContextAccessor>();
+                if (httpAccessor.HttpContext == null)
+                    throw new InvalidOperationException("HttpContext is null");
+
+                var tenantAccessor = sp.GetRequiredService<TenantInMemoryStoreAccessor>();
+                return tenantAccessor.GetTenantStore(
+                    httpAccessor.HttpContext
+                        .Request.Headers[backendSettings.Value.TenantHeader].First() ?? "");
+            });
+
+        return new InMemoryTraceRepository(() => sp.GetRequiredService<InMemoryTraceStore>());
     }
     else
     {
@@ -37,6 +52,8 @@ builder.Services.AddSingleton<ITraceRepository>(sp =>
 });
 
 var app = builder.Build();
+
+app.UseTenantIdMiddleware();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -64,7 +81,9 @@ public class BackendSettings
         InMemory,
         Redis
     }
+    public bool IsMultiTenant { get; set; } = false;
     public BackendType Type { get; set; }
+    public string TenantHeader { get; set; } = "x-tenant-id";
     public string? RedisConnectionString { get; set; } = "localhost:6379";
 }
 

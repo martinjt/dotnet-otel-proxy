@@ -1,39 +1,24 @@
-using System.Collections.Concurrent;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 
 namespace Otel.Proxy.TraceRepository;
 
 internal class InMemoryTraceRepository : ITraceRepository
 {
-    private ConcurrentDictionary<string, ConcurrentBag<SpanRecord>> SpanDictionary = new();
+    private readonly Func<InMemoryTraceStore> _traceStore;
+
+    public InMemoryTraceRepository(Func<InMemoryTraceStore> traceStore)
+    {
+        _traceStore = traceStore;
+    }
 
     public Task AddSpans(ExportTraceServiceRequest request)
     {
-        foreach (var resourceSpan in request.ResourceSpans)
-        foreach (var grouping in resourceSpan
-            .ScopeSpans.SelectMany(ss => ss.Spans)
-            .GroupBy(s => s.TraceId))
-            {
-                var traceId = grouping.Key;
-                var record = new SpanRecord
-                {
-                    Spans = grouping.ToList(),
-                    Resource = resourceSpan.Resource
-                };
-                var records = SpanDictionary.GetOrAdd(System.Text.Encoding.UTF8.GetString(traceId.Memory.ToArray()),  
-                    (b) => new ConcurrentBag<SpanRecord>());
-                records.Add(record);
-            }
-
-        return Task.CompletedTask;
+        return _traceStore().AddSpans(request);
     }
 
     public Task<IEnumerable<SpanRecord>> GetTrace(byte[] traceId)
     {
-        if (!SpanDictionary.TryGetValue(System.Text.Encoding.UTF8.GetString(traceId), out var record))
-            return Task.FromResult(Enumerable.Empty<SpanRecord>());
-        
-        return Task.FromResult(record as IEnumerable<SpanRecord>);
+        return _traceStore().GetTrace(traceId);
     }
 }
 

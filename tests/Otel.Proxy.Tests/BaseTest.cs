@@ -2,24 +2,28 @@ using System.Diagnostics;
 using System.Reflection;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Trace;
-using Otel.Proxy.Tests.Setup;
+using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Otel.Proxy.Tests;
 
 [UpdateActivityWithTestName]
+[Collection(OTelCollection.Name)]
 public abstract class BaseTest : IAsyncLifetime
 {
-    private readonly OtelProxyAppFactory _server;
     public static readonly ActivitySource Source = new("Tests");
     internal readonly HttpClient Api;
     private readonly Activity? _testActivity;
+    internal readonly OTelFixture _oTelFixture;
+    private readonly ITestOutputHelper _output;
 
-    public BaseTest()
+    public BaseTest(OTelFixture oTelFixture, ITestOutputHelper output)
     {
-        _server = new OtelProxyAppFactory();
-        Api = _server.CreateHTTPClient();
+        _oTelFixture = oTelFixture;
+        _output = output;
         _testActivity = Source.StartActivity("Test Started");
+        
+        Api = _oTelFixture.Server.CreateHTTPClient();
         if (_testActivity != null)
             Api.DefaultRequestHeaders.Add("traceparent", 
             $"00-{_testActivity.TraceId}-{_testActivity.SpanId}-01");
@@ -27,18 +31,19 @@ public abstract class BaseTest : IAsyncLifetime
 
     public Task InitializeAsync()
     {
-        OtelProxyAppFactory.TracerProvider?.ForceFlush();
+        _oTelFixture.TracerProvider?.ForceFlush();
         return Task.CompletedTask;
     }
 
     public Task DisposeAsync()
     {
+        _oTelFixture.WriteTraceLinkToOutput(_output, _testActivity!);
         _testActivity?.Stop();
-        OtelProxyAppFactory.TracerProvider?.ForceFlush();
+        _oTelFixture.TracerProvider?.ForceFlush();
         return Task.CompletedTask;
     }
 
-    internal IEnumerable<ExportTraceServiceRequest> RecordedExportRequests => _server.ReceivedExportRequests;
+    internal IEnumerable<ExportTraceServiceRequest> RecordedExportRequests => _oTelFixture.Server.ReceivedExportRequests;
 }
 
 public class UpdateActivityWithTestName : BeforeAfterTestAttribute
