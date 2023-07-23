@@ -26,7 +26,7 @@ public class SuccessTests : BaseTest
     }
 
     [Fact]
-    public async Task SingleRootSpan_SpanForwardedToHoneycomb()
+    public async Task SingleRootSpan_IsForwardedToHoneycomb()
     {
         var serviceName = Guid.NewGuid().ToString();
         var exportRequest = new ExportServiceRequestBuilder()
@@ -48,13 +48,15 @@ public class SuccessTests : BaseTest
     [Fact]
     public async Task SingleChildSpan_DoesNotSend()
     {
+        var serviceName = "does-not-matter";
+        var parentSpanIdThatHasNotBeenSent = ActivitySpanId.CreateRandom();
+
         var exportRequest = new ExportServiceRequestBuilder()
-            .WithService("service1")
-            .WithTrace(trace => 
-                trace.WithSpan(span => 
-                    span.WithAttribute("myattribute", "myvalue")
-                        .ForService("service1"),
-                        parentSpanId: ActivitySpanId.CreateRandom()
+            .WithService(serviceName)
+            .WithTrace(trace =>
+                trace.WithSpan(span =>
+                    span.ForService(serviceName),
+                        parentSpanId: parentSpanIdThatHasNotBeenSent
                     )
             ).Build();
 
@@ -64,33 +66,36 @@ public class SuccessTests : BaseTest
     }
 
     [Fact]
-    public async Task RootSpanInSecondRequest_ShouldSendChildSpan()
+    public async Task SingleTraceWithAcrossTwoRequests_RootSpanInSecondRequest_ShouldSendBothSpansOnSecondRequest()
     {
         var traceId = ActivityTraceId.CreateRandom();
         var rootSpanId = ActivitySpanId.CreateRandom();
+        var serviceName = "does-not-matter";
+
+        var rootSpanOnlyRequest = new ExportServiceRequestBuilder()
+            .WithService(serviceName)
+            .WithTrace(traceId, trace =>
+                trace.WithSpan(span =>
+                    span
+                        .ForService(serviceName),
+                        spanId: rootSpanId // THIS IS IMPORTANT
+                    )
+            ).Build();
+
         var childSpanOnlyRequest = new ExportServiceRequestBuilder()
-            .WithService("service1")
-            .WithTrace(traceId, trace => 
-                trace.WithSpan(span => 
-                    span.WithAttribute("myattribute", "myvalue")
-                        .ForService("service1"),
-                        parentSpanId: rootSpanId
+            .WithService(serviceName)
+            .WithTrace(traceId, trace =>
+                trace.WithSpan(span =>
+                    span
+                        .ForService(serviceName),
+                        parentSpanId: rootSpanId // THIS IS IMPORTANT
                     )
             ).Build();
 
         await Api.PostExportRequest(childSpanOnlyRequest);
 
-        var rootSpanOnlyRequest = new ExportServiceRequestBuilder()
-            .WithService("service1")
-            .WithTrace(traceId, trace => 
-                trace.WithSpan(span => 
-                    span.WithAttribute("myattribute", "myvalue")
-                        .ForService("service1"),
-                        spanId: rootSpanId
-                    )
-            ).Build();
-
         await Api.PostExportRequest(rootSpanOnlyRequest);
+
         RecordedExportRequests.ShouldNotBeEmpty();
         RecordedExportRequests.ShouldHaveSingleItem();
         var exportedData = RecordedExportRequests.First();
@@ -98,7 +103,7 @@ public class SuccessTests : BaseTest
     }
 
     [Fact]
-    public async Task RootSpanInSecondRequestForUnrelatedTrace_ShouldSendUnrelatedSpan()
+    public async Task RootSpanInSecondRequestForUnrelatedTrace_ShouldNotSendUnrelatedSpan()
     {
         var childSpanOnlyRequest = new ExportServiceRequestBuilder()
             .WithService("service1")
