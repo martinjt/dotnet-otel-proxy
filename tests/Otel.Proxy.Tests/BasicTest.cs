@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using Otel.Proxy.Tests.Setup;
+using Otel.Proxy.Tests.TraceGenerators;
 using Shouldly;
 using Xunit.Abstractions;
 
@@ -9,7 +10,7 @@ namespace Otel.Proxy.Tests;
 
 public class SuccessTests : BaseTest
 {
-    public SuccessTests(OTelFixture fixture, ITestOutputHelper testOutputHelper) 
+    public SuccessTests(OTelFixture fixture, ITestOutputHelper testOutputHelper)
         : base(fixture, testOutputHelper)
     {
 
@@ -18,9 +19,13 @@ public class SuccessTests : BaseTest
     [Fact]
     public async Task SingleSpan_Returns204()
     {
-        var exportRequest = TraceGenerator.CreateValidTraceExport();
+        var trace = new TraceModel
+        {
+            RootSpan = new SpanModel(),
+            ChildSpans = { new SpanModel() }
+        };
 
-        var result = await Api.PostExportRequest(exportRequest);
+        var result = await Api.PostTracesAsExportRequest(trace);
 
         result.StatusCode.ShouldBe(HttpStatusCode.Accepted);
     }
@@ -28,14 +33,12 @@ public class SuccessTests : BaseTest
     [Fact]
     public async Task SingleRootSpan_IsForwardedToHoneycomb()
     {
-        var serviceName = Guid.NewGuid().ToString();
-        var exportRequest = new ExportServiceRequestBuilder()
-            .WithService(serviceName)
-            .WithTrace(o => o
-                .WithRootSpan().ForService(serviceName))
-            .Build();
+        var trace = new TraceModel
+        {
+            RootSpan = new SpanModel()
+        };
 
-        var result = await Api.PostExportRequest(exportRequest);
+        await Api.PostTracesAsExportRequest(trace);
 
         var exportedData = RecordedExportRequests.First();
 
@@ -48,19 +51,12 @@ public class SuccessTests : BaseTest
     [Fact]
     public async Task SingleChildSpan_DoesNotSend()
     {
-        var serviceName = "does-not-matter";
-        var parentSpanIdThatHasNotBeenSent = ActivitySpanId.CreateRandom();
+        var trace = new TraceModel
+        {
+            ChildSpans = { new SpanModel() }
+        };
 
-        var exportRequest = new ExportServiceRequestBuilder()
-            .WithService(serviceName)
-            .WithTrace(trace =>
-                trace.WithSpan(span =>
-                    span.ForService(serviceName),
-                        parentSpanId: parentSpanIdThatHasNotBeenSent
-                    )
-            ).Build();
-
-        var result = await Api.PostExportRequest(exportRequest);
+        await Api.PostTracesAsExportRequest(trace);
 
         RecordedExportRequests.ShouldBeEmpty();
     }
@@ -69,68 +65,52 @@ public class SuccessTests : BaseTest
     public async Task SingleTraceWithAcrossTwoRequests_RootSpanInSecondRequest_ShouldSendBothSpansOnSecondRequest()
     {
         var traceId = ActivityTraceId.CreateRandom();
-        var rootSpanId = ActivitySpanId.CreateRandom();
-        var serviceName = "does-not-matter";
 
-        var rootSpanOnlyRequest = new ExportServiceRequestBuilder()
-            .WithService(serviceName)
-            .WithTrace(traceId, trace =>
-                trace.WithSpan(span =>
-                    span
-                        .ForService(serviceName),
-                        spanId: rootSpanId // THIS IS IMPORTANT
-                    )
-            ).Build();
+        var rootSpanOnlyModel = new TraceModel
+        {
+            TraceId = traceId,
+            RootSpan = new SpanModel()
+        };
+        var childSpanOnlyModel = new TraceModel
+        {
+            TraceId = traceId,
+            ChildSpans = {
+                new SpanModel {
+                    ParentSpanId = rootSpanOnlyModel.RootSpan.SpanId
+                }
+            }
+        };
 
-        var childSpanOnlyRequest = new ExportServiceRequestBuilder()
-            .WithService(serviceName)
-            .WithTrace(traceId, trace =>
-                trace.WithSpan(span =>
-                    span
-                        .ForService(serviceName),
-                        parentSpanId: rootSpanId // THIS IS IMPORTANT
-                    )
-            ).Build();
+        await Api.PostTracesAsExportRequest(childSpanOnlyModel);
 
-        await Api.PostExportRequest(childSpanOnlyRequest);
-
-        await Api.PostExportRequest(rootSpanOnlyRequest);
+        await Api.PostTracesAsExportRequest(rootSpanOnlyModel);
 
         RecordedExportRequests.ShouldNotBeEmpty();
         RecordedExportRequests.ShouldHaveSingleItem();
         var exportedData = RecordedExportRequests.First();
-        exportedData.ResourceSpans.Count().ShouldBe(2);
+        exportedData.ResourceSpans.Count.ShouldBe(2);
     }
 
     [Fact]
     public async Task RootSpanInSecondRequestForUnrelatedTrace_ShouldNotSendUnrelatedSpan()
     {
-        var childSpanOnlyRequest = new ExportServiceRequestBuilder()
-            .WithService("service1")
-            .WithTrace(trace => 
-                trace.WithSpan(span => 
-                    span.WithAttribute("myattribute", "myvalue")
-                        .ForService("service1"),
-                        parentSpanId: ActivitySpanId.CreateRandom()
-                    )
-            ).Build();
+        var firstTraceWithOnlyChildSpan = new TraceModel
+        {
+            ChildSpans = { new SpanModel() }
+        };
 
-        await Api.PostExportRequest(childSpanOnlyRequest);
+        var secondTraceWithRootSpan = new TraceModel
+        {
+            RootSpan = new SpanModel()
+        };
 
-        var rootSpanOnlyRequest = new ExportServiceRequestBuilder()
-            .WithService("service1")
-            .WithTrace( trace => 
-                trace.WithRootSpan(span => 
-                    span.WithAttribute("myattribute", "myvalue")
-                        .ForService("service1")
-                    )
-            ).Build();
+        await Api.PostTracesAsExportRequest(firstTraceWithOnlyChildSpan);
+        await Api.PostTracesAsExportRequest(secondTraceWithRootSpan);
 
-        await Api.PostExportRequest(rootSpanOnlyRequest);
         RecordedExportRequests.ShouldNotBeEmpty();
         RecordedExportRequests.ShouldHaveSingleItem();
         var exportedData = RecordedExportRequests.First();
-        exportedData.ResourceSpans.Count().ShouldBe(1);
+        exportedData.ResourceSpans.Count.ShouldBe(1);
     }
 
 

@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using OpenTelemetry.Proto.Collector.Trace.V1;
+using Otel.Proxy.Tests.TraceGenerators;
 using ProtoBuf;
 
 namespace Otel.Proxy.Tests.Setup;
@@ -16,6 +17,16 @@ internal static class ProxyExtensions
         if (tenantId != null)
             content.Headers.Add("x-tenant-id", tenantId);
         return await httpClient.PostAsync("/v1/traces", content);
+    }
+
+    public static async Task<HttpResponseMessage> PostTracesAsExportRequest(this HttpClient httpClient, TraceModel trace, string? tenantId = null!)
+        => await httpClient.PostTracesAsExportRequest(new List<TraceModel> { trace }, tenantId);
+
+    public static async Task<HttpResponseMessage> PostTracesAsExportRequest(this HttpClient httpClient, List<TraceModel> traces, string? tenantId = null!)
+    {
+        var exportRequest = ExportTraceServiceRequestBuilder.Build(traces);
+
+        return await httpClient.PostExportRequest(exportRequest, tenantId);
     }
 
 }

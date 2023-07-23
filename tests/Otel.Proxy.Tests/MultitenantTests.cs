@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Otel.Proxy.Tests.Setup;
+using Otel.Proxy.Tests.TraceGenerators;
 using Shouldly;
 using Xunit.Abstractions;
 
@@ -18,30 +19,26 @@ public class MultitenantTests : BaseTest
     public async Task RootSpanInSecondRequestForDifferentTenant_ShouldNotSendChildSpan()
     {
         var traceId = ActivityTraceId.CreateRandom();
-        var rootSpanId = ActivitySpanId.CreateRandom();
-        var childSpanOnlyRequest = new ExportServiceRequestBuilder()
-            .WithService("service1")
-            .WithTrace(traceId, trace => 
-                trace.WithSpan(span => 
-                    span.WithAttribute("myattribute", "myvalue")
-                        .ForService("service1"),
-                        parentSpanId: rootSpanId
-                    )
-            ).Build();
 
-        await Api.PostExportRequest(childSpanOnlyRequest);
+        var rootSpanOnlyModel = new TraceModel
+        {
+            TraceId = traceId,
+            RootSpan = new SpanModel()
+        };
 
-        var rootSpanOnlyRequest = new ExportServiceRequestBuilder()
-            .WithService("service1")
-            .WithTrace(traceId, trace => 
-                trace.WithSpan(span => 
-                    span.WithAttribute("myattribute", "myvalue")
-                        .ForService("service1"),
-                        spanId: rootSpanId
-                    )
-            ).Build();
+        var childSpanOnlyModel = new TraceModel
+        {
+            TraceId = traceId,
+            ChildSpans = {
+                new SpanModel {
+                    ParentSpanId = rootSpanOnlyModel.RootSpan.SpanId
+                }
+            }
+        };
 
-        await Api.PostExportRequest(rootSpanOnlyRequest, "NewTenant");
+        await Api.PostTracesAsExportRequest(childSpanOnlyModel);
+        await Api.PostTracesAsExportRequest(rootSpanOnlyModel, "NewTenant");
+
         RecordedExportRequests.ShouldNotBeEmpty();
         RecordedExportRequests.ShouldHaveSingleItem();
         var exportedData = RecordedExportRequests.First();
