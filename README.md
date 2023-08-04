@@ -22,8 +22,9 @@ The tests use a statically generated and committed protobuf. This is so that the
 
 ## Generating OpenTelemetry Protobuf For the tests
 
-Run the following command in the root to generate new protobuf definitons for the tests.
+Run the following commands in the root to generate new protobuf definitons for the tests.
 
 ```shell
+git submodule update --init --recursive
 protogen --proto_path=opentelemetry-proto/ --csharp_out=tests/Otel.Proxy.Tests/ **/*.proto
 ```
