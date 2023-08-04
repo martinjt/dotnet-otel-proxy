@@ -10,8 +10,9 @@ The overall goal is to understand how hard Tail-Based sampling is, and try out s
 
 ## Generating OpenTelemetry Protobuf
 
-Run the following command in the root
+Run the following commands in the root
 
 ```shell
+git submodule update --init --recursive
 protogen --proto_path=opentelemetry-proto/ --csharp_out=src/Otel.Proxy/ **/*.proto
 ```
