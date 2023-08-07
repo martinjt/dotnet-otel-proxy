@@ -21,7 +21,7 @@ public class AverageRateRateSampler : ISampler
     public Task UpdateAllSampleRates()
     {
         var totalNumberOfTraces = _sampleRates.Values.Sum(x => x.CountOfInstances);
-        var log10OfAllInstances = _sampleRates.Values.Sum(x => Math.Log(x.CountOfInstances));
+        var log10OfAllInstances = _sampleRates.Values.Sum(x => Math.Log10(x.CountOfInstances));
 
         var goalCount = totalNumberOfTraces / _goalSampleRate;
         var goalRatio = goalCount / log10OfAllInstances;
@@ -33,7 +33,6 @@ public class AverageRateRateSampler : ISampler
 
     private void CalculateSampleRates(double goalRatio)
     {
-        var unSortedKeys = _sampleRates.Keys.ToList();
         var sortedKeys = _sampleRates.Keys.OrderBy(k => k).ToList();
 
         var newSampleRates = new Dictionary<string, SampleKeyInformation>();
@@ -41,7 +40,7 @@ public class AverageRateRateSampler : ISampler
         var extra = 0.0;
         foreach (var key in sortedKeys)
         {
-            var count = Math.Max(1, unSortedKeys.IndexOf(key));
+            var count = Math.Max(1, _sampleRates[key].CountOfInstances);
             var goalForKey = Math.Max(1, Math.Log10(count) * goalRatio);
             var extraForKey = extra / keysRemaining;
     		goalForKey += extraForKey;
