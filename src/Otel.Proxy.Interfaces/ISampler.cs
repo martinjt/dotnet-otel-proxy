@@ -24,3 +24,8 @@ public interface ISamplerRateUpdater
     /// <returns></returns>
     public Task UpdateAllSampleRates();
 }
+
+public interface ISamplerKeyGenerator
+{
+    public Task<string> GenerateKey(List<KeyValuePair<string, string>> tags);
+}

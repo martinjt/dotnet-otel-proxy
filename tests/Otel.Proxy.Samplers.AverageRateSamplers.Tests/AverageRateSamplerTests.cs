@@ -2,7 +2,7 @@ namespace Otel.Proxy.Samplers.AverageRateSamplers.Tests;
 
 public class AverageRateSamplerTests
 {
-    private readonly AverageRateRateSampler _sut
+    private readonly InMemoryAverageRateSampler _sut
         = new (20);
 
     [Fact]

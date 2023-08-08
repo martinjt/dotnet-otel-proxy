@@ -1,15 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenTelemetry.Proto.Collector.Trace.V1;
-using Otel.Proxy.TraceRepository;
 
 namespace Otel.Proxy.Controllers;
 
 internal class TracesHttpProtobufController : Controller
 {
     private readonly ITraceRepository _traceRepository;
-    private readonly TraceProcessor _traceProcessor;
+    private readonly ITraceProcessor _traceProcessor;
 
-    public TracesHttpProtobufController(ITraceRepository traceRepository, TraceProcessor traceProcessor)
+    public TracesHttpProtobufController(ITraceRepository traceRepository, ITraceProcessor traceProcessor)
     {
         _traceRepository = traceRepository;
         _traceProcessor = traceProcessor;

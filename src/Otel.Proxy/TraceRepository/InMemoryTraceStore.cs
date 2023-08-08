@@ -35,4 +35,9 @@ internal class InMemoryTraceStore
         return Task.FromResult(record as IEnumerable<SpanRecord>);
     }
 
+    internal Task DeleteTrace(byte[] traceId)
+    {
+        SpanDictionary.TryRemove(System.Text.Encoding.UTF8.GetString(traceId), out _);
+        return Task.CompletedTask;
+    }
 }

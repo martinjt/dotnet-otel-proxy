@@ -1,5 +1,4 @@
 using Google.Protobuf;
-using NRedisStack.RedisStackCommands;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Trace.V1;
 using StackExchange.Redis;
@@ -43,6 +42,12 @@ internal class RedisTraceRepository : ITraceRepository
                 await _database.ListRightPushAsync(traceId, ms.ToArray());
                 await _database.KeyExpireAsync(traceId, TimeSpan.FromSeconds(600));
             }
+    }
+
+    public Task DeleteTrace(byte[] traceIdBytes)
+    {
+        var traceId = System.Text.Encoding.UTF8.GetString(traceIdBytes);
+        return _database.KeyDeleteAsync(traceId);
     }
 
     public async Task<IEnumerable<SpanRecord>> GetTrace(byte[] traceIdBytes)

@@ -19,7 +19,20 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddSingleton<TraceProcessor>();
+builder.Services.AddSingleton<HoneycombExporter>();
+builder.Services.AddSingleton<ITraceProcessor>(sp => {
+    var processorSettings = sp.GetRequiredService<IOptions<ProcessingSettings>>();
+    if (processorSettings.Value.TraceProcessor == ProcessingSettings.ProcessingType.AverageRate)
+        return new AverageRateSamplingTraceProcessor(
+            sp.GetRequiredService<ITraceRepository>(),
+            new GenericSampleKeyGenerator(new HashSet<string> { "http.method", "http.status_code" }),
+            new InMemoryAverageRateSampler(20),
+            sp.GetRequiredService<HoneycombExporter>());
+    
+    return new NoSamplingTraceProcessor(
+        sp.GetRequiredService<ITraceRepository>(),
+        sp.GetRequiredService<HoneycombExporter>());
+});
 builder.Services.AddSingleton<InMemoryTraceStore>();
 builder.Services.AddSingleton<TenantInMemoryStoreAccessor>();
 builder.Services.AddSingleton<ITraceRepository>(sp =>
@@ -87,3 +100,13 @@ public class BackendSettings
     public string? RedisConnectionString { get; set; } = "localhost:6379";
 }
 
+public class ProcessingSettings
+{
+    public enum ProcessingType
+    {
+        NoSampling = 0,
+        AverageRate = 1
+    }
+
+    public ProcessingType TraceProcessor { get; set; }
+}

@@ -1,13 +1,13 @@
 ﻿using Otel.Proxy.Interfaces;
 
 namespace Otel.Proxy.Samplers;
-public class AverageRateRateSampler : ISamplerRate, ISamplerRateUpdater
+public class InMemoryAverageRateSampler : ISamplerRate, ISamplerRateUpdater
 {
     public double GoalSampleRate { get; }
     
     private Dictionary<string, SampleKeyInformation> _sampleRates = new();
 
-    public AverageRateRateSampler(int goalSampleRate)
+    public InMemoryAverageRateSampler(int goalSampleRate)
     {
         GoalSampleRate = goalSampleRate;
     }
@@ -75,12 +75,15 @@ public class AverageRateRateSampler : ISamplerRate, ISamplerRateUpdater
         }
 
         lock(_sampleRates) {
-            _sampleRates = newSampleRates;
+            foreach (var key in newSampleRates.Keys)
+                _sampleRates[key].SampleRate = newSampleRates[key].SampleRate;
         }
     }
 
-    private class SampleKeyInformation {
-        public double SampleRate { get; set; }
-        public int CountOfInstances { get; set; }
-    }
+}
+
+internal class SampleKeyInformation
+{
+    public double SampleRate { get; internal set; }
+    public int CountOfInstances { get; internal set; }
 }
