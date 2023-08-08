@@ -1,17 +1,20 @@
-﻿namespace Otel.Proxy.Samplers;
-public class AverageRateRateSampler : ISampler
+﻿using Otel.Proxy.Interfaces;
+
+namespace Otel.Proxy.Samplers;
+public class AverageRateRateSampler : ISamplerRate, ISamplerRateUpdater
 {
-    private readonly int _goalSampleRate;
+    public double GoalSampleRate { get; }
+    
     private Dictionary<string, SampleKeyInformation> _sampleRates = new();
 
     public AverageRateRateSampler(int goalSampleRate)
     {
-        _goalSampleRate = goalSampleRate;
+        GoalSampleRate = goalSampleRate;
     }
-    public Task<int> GetSampleRate(string key)
+    public Task<double> GetSampleRate(string key)
     {
         if (!_sampleRates.ContainsKey(key))
-            _sampleRates.Add(key, new SampleKeyInformation { SampleRate = _goalSampleRate, CountOfInstances = 1 });
+            _sampleRates.Add(key, new SampleKeyInformation { SampleRate = GoalSampleRate, CountOfInstances = 1 });
         else
             _sampleRates[key].CountOfInstances++;
 
@@ -23,7 +26,7 @@ public class AverageRateRateSampler : ISampler
         var totalNumberOfTraces = _sampleRates.Values.Sum(x => x.CountOfInstances);
         var log10OfAllInstances = _sampleRates.Values.Sum(x => Math.Log10(x.CountOfInstances));
 
-        var goalCount = totalNumberOfTraces / _goalSampleRate;
+        var goalCount = totalNumberOfTraces / GoalSampleRate;
         var goalRatio = goalCount / log10OfAllInstances;
 
         CalculateSampleRates(goalRatio);
@@ -33,13 +36,17 @@ public class AverageRateRateSampler : ISampler
 
     private void CalculateSampleRates(double goalRatio)
     {
-        var sortedKeys = _sampleRates.Keys.OrderBy(k => k).ToList();
+        var sortedKeysAlphabetically = _sampleRates.Keys
+            .OrderBy(x => x)
+            .ToList();
 
         var newSampleRates = new Dictionary<string, SampleKeyInformation>();
-        var keysRemaining = sortedKeys.Count;
+        var keysRemaining = sortedKeysAlphabetically.Count;
         var extra = 0.0;
-        foreach (var key in sortedKeys)
+        foreach (var key in sortedKeysAlphabetically)
         {
+            // This code needs refactoring now that the tests are in.
+
             var count = Math.Max(1, _sampleRates[key].CountOfInstances);
             var goalForKey = Math.Max(1, Math.Log10(count) * goalRatio);
             var extraForKey = extra / keysRemaining;
@@ -73,7 +80,7 @@ public class AverageRateRateSampler : ISampler
     }
 
     private class SampleKeyInformation {
-        public int SampleRate { get; set; }
+        public double SampleRate { get; set; }
         public int CountOfInstances { get; set; }
     }
 }

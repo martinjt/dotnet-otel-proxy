@@ -2,13 +2,9 @@ namespace Otel.Proxy.Samplers.AverageRateSamplers.Tests;
 
 public class AverageRateSamplerTests
 {
-    private AverageRateRateSampler _sut;
+    private readonly AverageRateRateSampler _sut
+        = new (20);
 
-    public AverageRateSamplerTests()
-    {
-        _sut = new AverageRateRateSampler(20);
-    }
-    
     [Fact]
     public async Task NoDataInSampler_ReturnsDefaultSampleRate()
     {
@@ -16,19 +12,49 @@ public class AverageRateSamplerTests
     }
 
     [Fact]
-    public async Task ValidData_AfterUpdateSampleRates_NewSampleRatesAreReturns()
+    public async Task SingleKeyWithCountBelowSampleRate_SampleRateIsSetToTraceCount()
+    {
+        var currentTraceCount = (int)_sut.GoalSampleRate - 1;
+        var sampleData = new List<SamplerTestDataObject>{
+            new (RandomKey(), currentTraceCount, currentTraceCount),
+        };
+
+        await SetSampleData(sampleData);
+
+        await _sut.UpdateAllSampleRates();
+
+        await AssertSampleRates(sampleData);
+    }
+
+    [Fact]
+    public async Task SingleKeyWithCountAboveGoalSampleRate_SampleRateIsSetToGoalSampleRate()
+    {
+        var currentTraceCount = (int)_sut.GoalSampleRate + 20;
+        var sampleData = new List<SamplerTestDataObject>{
+            new (RandomKey(), currentTraceCount, _sut.GoalSampleRate),
+        };
+
+        await SetSampleData(sampleData);
+
+        await _sut.UpdateAllSampleRates();
+
+        await AssertSampleRates(sampleData);
+    }
+
+    [Fact]
+    public async Task UnequalDistributionOfCountsMuchGreaterThanGoalWithSpecificKeyStrings_SampleRateIsAccurate()
     {
         var sampleData = new List<SamplerTestDataObject>() {
-            new ("one",   1, 1),
-            new ("two",   1, 1),
+            new ("one", 1, 1),
+            new ("two", 1, 1),
             new ("three", 2, 1),
-            new ("four",  5, 1),
-            new ("five",  8, 1),
-            new ("six",   15, 1),
+            new ("four", 5, 1),
+            new ("five", 8, 1),
+            new ("six", 15, 1),
             new ("seven", 45, 1),
             new ("eight", 612, 6),
-            new ("nine",  2000, 14),
-            new ("ten",   10000, 47)
+            new ("nine", 2000, 14),
+            new ("ten", 10000, 47)
         };
         await SetSampleData(sampleData);
 
@@ -37,12 +63,65 @@ public class AverageRateSamplerTests
         await AssertSampleRates(sampleData);
     }
 
+    [Fact]
+    public async Task AllCountsUnderneathGoalRate_NewSampleRateIsEqualToCount()
+    {
+        var sampleData = new List<SamplerTestDataObject>() {
+                new (RandomKey(), 1,1),
+                new (RandomKey(), 1,1),
+                new (RandomKey(), 2,2),
+                new (RandomKey(), 5,5),
+                new (RandomKey(), 7,7)
+        };
+        await SetSampleData(sampleData);
+
+        await _sut.UpdateAllSampleRates();
+
+        await AssertSampleRates(sampleData);
+    }
+
+    [Fact]
+    public async Task AllCountsTheSameAboveGoalSampleRate_AllKeysSetToGoalSampleRate()
+    {
+        var originalSampleRate = 6000;
+        var sampleData = new List<SamplerTestDataObject>{
+            new (RandomKey(), originalSampleRate, _sut.GoalSampleRate),
+            new (RandomKey(), originalSampleRate, _sut.GoalSampleRate),
+            new (RandomKey(), originalSampleRate, _sut.GoalSampleRate),
+            new (RandomKey(), originalSampleRate, _sut.GoalSampleRate),
+            new (RandomKey(), originalSampleRate, _sut.GoalSampleRate)
+        };
+        await SetSampleData(sampleData);
+
+        await _sut.UpdateAllSampleRates();
+
+        await AssertSampleRates(sampleData);
+    }
+
+    [Fact]
+    public async Task TwentyDifferentKeysOnlyOneNotTheSameButBelowGoalSampleRate_ChangesOnlyThatOne()
+    {
+        var sampleData = new List<SamplerTestDataObject>()
+        {
+            new (RandomKey(), 10, 7),
+        };
+        sampleData.AddRange(
+            Enumerable.Range(0, 19)
+                .Select(_ => new SamplerTestDataObject(RandomKey(), 1, 1))
+        );
+
+        await SetSampleData(sampleData);
+
+        await _sut.UpdateAllSampleRates();
+
+        await AssertSampleRates(sampleData);
+    }
 
     private async Task SetSampleData(List<SamplerTestDataObject> sampleData)
     {
         foreach (var data in sampleData)
         {
-            for (var i = 0; i < data.OriginalSampleRate; i++)
+            for (var i = 0; i < data.CurrentTraceCount; i++)
                 await _sut.GetSampleRate(data.Key);
         }
     }
@@ -54,8 +133,10 @@ public class AverageRateSamplerTests
             Assert.Equal(data.NewSampleRate, await _sut.GetSampleRate(data.Key));
         }
     }
+
+    private static string RandomKey() => Guid.NewGuid().ToString();
+
+    public record SamplerTestDataObject(string Key, int CurrentTraceCount, double NewSampleRate);
 }
 
 
-// samplertestdataobject as a record
-public record SamplerTestDataObject(string Key, int OriginalSampleRate, int NewSampleRate);
