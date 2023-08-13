@@ -1,4 +1,4 @@
-namespace Otel.Proxy.Samplers.AverageRateSamplers.Tests;
+namespace Otel.Proxy.Tests.Sampling;
 
 public class AverageRateSamplerTests
 {

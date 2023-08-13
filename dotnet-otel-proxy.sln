@@ -15,10 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otel.Proxy.Tests", "tests\O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otel.Proxy.Interfaces", "src\Otel.Proxy.Interfaces\Otel.Proxy.Interfaces.csproj", "{0EE856C3-0252-4EBA-BD9B-8B4AA587BAD0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otel.Proxy.Samplers.AverageRateSampler", "src\Otel.Proxy.Samplers.AverageRateSampler\Otel.Proxy.Samplers.AverageRateSampler.csproj", "{94CB9FBA-7968-454B-803B-17BFD7CB0C90}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otel.Proxy.Samplers.AverageRateSamplers.Tests", "tests\Otel.Proxy.Samplers.AverageRateSamplers.Tests\Otel.Proxy.Samplers.AverageRateSamplers.Tests.csproj", "{6A9BD1C6-2CA2-405E-A719-51DDEF617DF8}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,20 +40,10 @@ Global
 		{0EE856C3-0252-4EBA-BD9B-8B4AA587BAD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0EE856C3-0252-4EBA-BD9B-8B4AA587BAD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0EE856C3-0252-4EBA-BD9B-8B4AA587BAD0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94CB9FBA-7968-454B-803B-17BFD7CB0C90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94CB9FBA-7968-454B-803B-17BFD7CB0C90}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94CB9FBA-7968-454B-803B-17BFD7CB0C90}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94CB9FBA-7968-454B-803B-17BFD7CB0C90}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6A9BD1C6-2CA2-405E-A719-51DDEF617DF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6A9BD1C6-2CA2-405E-A719-51DDEF617DF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6A9BD1C6-2CA2-405E-A719-51DDEF617DF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6A9BD1C6-2CA2-405E-A719-51DDEF617DF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C8DB6227-9B39-4D8D-8A6A-1B7DEC89AD96} = {E9C060DB-D91B-42E0-9BD9-87220FFDE216}
 		{1B21644A-4ADA-4341-B45B-4C1A4EDD6813} = {4876D583-A41C-41AD-A3A8-E87899ABB2E9}
 		{0EE856C3-0252-4EBA-BD9B-8B4AA587BAD0} = {E9C060DB-D91B-42E0-9BD9-87220FFDE216}
-		{94CB9FBA-7968-454B-803B-17BFD7CB0C90} = {E9C060DB-D91B-42E0-9BD9-87220FFDE216}
-		{6A9BD1C6-2CA2-405E-A719-51DDEF617DF8} = {4876D583-A41C-41AD-A3A8-E87899ABB2E9}
 	EndGlobalSection
 EndGlobal

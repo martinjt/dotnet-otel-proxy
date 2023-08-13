@@ -1,6 +1,4 @@
-﻿using Otel.Proxy.Interfaces;
-
-namespace Otel.Proxy.Samplers;
+﻿namespace Otel.Proxy.Sampling;
 public class InMemoryAverageRateSampler : ISamplerRate, ISamplerRateUpdater
 {
     public double GoalSampleRate { get; }
