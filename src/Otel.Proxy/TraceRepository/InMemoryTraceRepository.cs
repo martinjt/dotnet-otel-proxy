@@ -16,6 +16,11 @@ internal class InMemoryTraceRepository : ITraceRepository
         return _traceStore().AddSpans(request);
     }
 
+    public Task DeleteTrace(byte[] traceId)
+    {
+        return _traceStore().DeleteTrace(traceId);
+    }
+
     public Task<IEnumerable<SpanRecord>> GetTrace(byte[] traceId)
     {
         return _traceStore().GetTrace(traceId);
