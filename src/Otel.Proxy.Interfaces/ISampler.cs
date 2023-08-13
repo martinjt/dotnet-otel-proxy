@@ -11,6 +11,8 @@ public interface ISamplerRate
     /// <param name="key">The SampleKey to lookup</param>
     /// <returns></returns>
     public Task<double> GetSampleRate(string key);
+    
+    public Task<bool> ShouldSample(List<KeyValuePair<string, object>> tags);
 }
 
 /// <summary>
@@ -28,4 +30,13 @@ public interface ISamplerRateUpdater
 public interface ISamplerKeyGenerator
 {
     public Task<string> GenerateKey(List<KeyValuePair<string, string>> tags);
+}
+
+
+public record SampleCondition(string Key, object Value, ConditionsOperator Operator);
+
+public enum ConditionsOperator
+{
+    Unknown,
+    Equals
 }
