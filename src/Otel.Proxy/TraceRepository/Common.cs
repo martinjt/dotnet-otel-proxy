@@ -9,6 +9,7 @@ internal interface ITraceRepository
 {
     Task AddSpans(ExportTraceServiceRequest request);
     Task<IEnumerable<SpanRecord>> GetTrace(byte[] traceId);
+    Task DeleteTrace(byte[] traceId);
 }
 
 internal class SpanRecord

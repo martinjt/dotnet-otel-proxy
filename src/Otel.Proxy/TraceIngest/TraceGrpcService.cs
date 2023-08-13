@@ -7,9 +7,9 @@ using Otel.Proxy.TraceRepository;
 internal class TraceGrpcService : TraceServiceBase
 {
     private readonly ITraceRepository _traceRepository;
-    private readonly TraceProcessor _traceProcessor;
+    private readonly ITraceProcessor _traceProcessor;
 
-    public TraceGrpcService(ITraceRepository traceRepository, TraceProcessor traceProcessor)
+    public TraceGrpcService(ITraceRepository traceRepository, ITraceProcessor traceProcessor)
     {
         _traceRepository = traceRepository;
         _traceProcessor = traceProcessor;

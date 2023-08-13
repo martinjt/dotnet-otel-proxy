@@ -22,4 +22,8 @@
     <Protobuf Include="../../opentelemetry-proto/**/*.proto" GrpcServices="Server" ProtoRoot="../../opentelemetry-proto/" Access="Internal" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Otel.Proxy.Interfaces\Otel.Proxy.Interfaces.csproj" />
+  </ItemGroup>
+
 </Project>
