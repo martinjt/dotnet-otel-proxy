@@ -15,8 +15,6 @@ builder.Services.AddControllers(o => o.InputFormatters.Add(new ProtobufInputForm
 
 builder.Services.AddGrpc();
 builder.Services.AddOptions<BackendSettings>().Bind(builder.Configuration.GetSection("Backend"));
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<HoneycombExporter>();
@@ -27,15 +25,8 @@ builder.Services.AddStorageBackend();
 var app = builder.Build();
 
 app.UseTenantIdMiddleware();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 app.UseAuthorization();
+
 app.MapWhen(context => context.Connection.LocalPort == 4317,
     grpcPort => grpcPort.UseRouting().UseEndpoints(e => e.MapGrpcService<TraceGrpcService>()));
 app.MapWhen(context => context.Connection.LocalPort == 4318,
