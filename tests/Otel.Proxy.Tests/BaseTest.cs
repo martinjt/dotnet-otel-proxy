@@ -7,13 +7,40 @@ using Xunit.Sdk;
 
 namespace Otel.Proxy.Tests;
 
-[UpdateActivityWithTestName]
-[Collection(OTelCollection.Name)]
-public abstract class BaseTest : IAsyncLifetime
+
+public abstract class ActivityWrappedBaseTest : IAsyncLifetime
 {
     public static readonly ActivitySource Source = new("Tests");
+    protected readonly Activity? _testActivity;
+    public ActivityWrappedBaseTest()
+    {
+        _testActivity = Source.StartActivity("Test Started");
+    }
+
+    public Task InitializeAsync()
+    {
+        OTelFixture.TracerProvider?.ForceFlush();
+        return Task.CompletedTask;
+    }
+
+    public Task DisposeAsync()
+    {
+        _testActivity?.Stop();
+        OTelFixture.TracerProvider?.ForceFlush();
+        return Task.CompletedTask;
+    }
+    internal void SetTraceHeadersOnHttpClient(HttpClient client)
+    {
+        if (_testActivity != null)
+            client.DefaultRequestHeaders.Add("traceparent", 
+            $"00-{_testActivity.TraceId}-{_testActivity.SpanId}-01");
+    }
+}
+[UpdateActivityWithTestName]
+[Collection(OTelCollection.Name)]
+public abstract class BaseTest : ActivityWrappedBaseTest, IAsyncLifetime
+{
     internal readonly HttpClient Api;
-    private readonly Activity? _testActivity;
     internal readonly OTelFixture _oTelFixture;
     private readonly ITestOutputHelper _output;
 
@@ -21,26 +48,15 @@ public abstract class BaseTest : IAsyncLifetime
     {
         _oTelFixture = oTelFixture;
         _output = output;
-        _testActivity = Source.StartActivity("Test Started");
         
         Api = _oTelFixture.Server.CreateHTTPClient();
-        if (_testActivity != null)
-            Api.DefaultRequestHeaders.Add("traceparent", 
-            $"00-{_testActivity.TraceId}-{_testActivity.SpanId}-01");
+        SetTraceHeadersOnHttpClient(Api);
     }
 
-    public Task InitializeAsync()
+    public new async Task DisposeAsync()
     {
-        _oTelFixture.TracerProvider?.ForceFlush();
-        return Task.CompletedTask;
-    }
-
-    public Task DisposeAsync()
-    {
+        await base.DisposeAsync();
         _oTelFixture.WriteTraceLinkToOutput(_output, _testActivity!);
-        _testActivity?.Stop();
-        _oTelFixture.TracerProvider?.ForceFlush();
-        return Task.CompletedTask;
     }
 
     internal IEnumerable<ExportTraceServiceRequest> RecordedExportRequests => _oTelFixture.Server.ReceivedExportRequests;

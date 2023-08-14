@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http.Features;
 using System.Net;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Configuration;
+using Otel.Proxy.Interfaces;
 
 namespace Otel.Proxy.Tests.Setup;
 
@@ -21,9 +22,10 @@ public class OtelProxyAppFactory : WebApplicationFactory<Program>
     private readonly ConcurrentDictionary<string, List<ExportTraceServiceRequest>> _exportTraceServiceRequests = new();
     private readonly HttpClientInterceptorOptions _httpClientInterceptorOptions = new();
     private readonly TracerProvider? _tracerProvider;
+    private readonly List<ISampler> _samplers;
     private static readonly bool _registeredExceptionHandler = false;
 
-    public OtelProxyAppFactory(TracerProvider? tracerProvider)
+    public OtelProxyAppFactory(TracerProvider? tracerProvider, List<ISampler> samplers = null!)
     {
         if (!_registeredExceptionHandler)
             AppDomain.CurrentDomain.FirstChanceException += (_, args) =>
@@ -34,6 +36,7 @@ public class OtelProxyAppFactory : WebApplicationFactory<Program>
             };
         SetupInterceptor();
         _tracerProvider = tracerProvider;
+        _samplers = samplers ?? new List<ISampler>();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -49,6 +52,8 @@ public class OtelProxyAppFactory : WebApplicationFactory<Program>
                 _ => new HttpClientInterceptionFilter(_httpClientInterceptorOptions));
             if (_tracerProvider != null)
                 services.AddSingleton(_tracerProvider);
+            if (_samplers.Any())
+                services.AddSingleton(new CompositeSampler(_samplers));
         });
 
         base.ConfigureWebHost(builder);

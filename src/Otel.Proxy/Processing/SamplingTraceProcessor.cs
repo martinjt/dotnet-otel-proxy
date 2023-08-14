@@ -4,24 +4,21 @@ using OpenTelemetry.Proto.Trace.V1;
 
 namespace Otel.Proxy.Processing;
 
-internal class AverageRateSamplingTraceProcessor : ITraceProcessor
+internal class SamplingTraceProcessor : ITraceProcessor
 {
     private const int KeepAllTraces = 1;
     private readonly Random _random = new();
     private readonly ITraceRepository _traceRepository;
-    private readonly GenericSampleKeyGenerator _samplerKeyGenerator;
-    private readonly InMemoryAverageRateSampler _averageRateSampler;
+    private readonly CompositeSampler _compositeSampler;
     private readonly HoneycombExporter _honeycombExporter;
 
-    public AverageRateSamplingTraceProcessor(
+    public SamplingTraceProcessor(
         ITraceRepository traceRepository,
-        GenericSampleKeyGenerator samplerKeyGenerator,
-        InMemoryAverageRateSampler averageRateSampler,
+        CompositeSampler compositeSampler,
         HoneycombExporter honeycombExporter)
     {
         _traceRepository = traceRepository;
-        _samplerKeyGenerator = samplerKeyGenerator;
-        _averageRateSampler = averageRateSampler;
+        _compositeSampler = compositeSampler;
         _honeycombExporter = honeycombExporter;
     }
 
@@ -29,15 +26,20 @@ internal class AverageRateSamplingTraceProcessor : ITraceProcessor
     {
         var trace = await _traceRepository.GetTrace(traceId);
 
-        var sampleKey = await GenerateSampleKeyFromTraceAttributes(trace);
-
-        var sampleRateForKey = await _averageRateSampler.GetSampleRate(sampleKey);
-
-        if (sampleRateForKey != KeepAllTraces &&
-            _random.NextInt64(1, (int)sampleRateForKey) == 1)
+        if (_compositeSampler.SamplingActive)
         {
-            await SendTrace(trace, sampleRateForKey);
+            var attributes = GetAllAttributesAsList(trace);
+
+            var sampleRateForKey = await _compositeSampler.GetSampleRate(attributes);
+
+            if (sampleRateForKey != KeepAllTraces &&
+                _random.NextInt64(1, (int)sampleRateForKey) == 1)
+            {
+                await SendTrace(trace, sampleRateForKey);
+            }
         }
+        else
+            await SendTrace(trace, KeepAllTraces);
 
         await _traceRepository.DeleteTrace(traceId);
     }
@@ -61,7 +63,7 @@ internal class AverageRateSamplingTraceProcessor : ITraceProcessor
                             s.Attributes.Add(new KeyValue
                             {
                                 Key = "SampleRate",
-                                Value = {
+                                Value = new AnyValue {
                                     IntValue = (int)sampleRateForKey
                                 }
                             });
@@ -76,16 +78,16 @@ internal class AverageRateSamplingTraceProcessor : ITraceProcessor
         await _honeycombExporter.SendRequestToHoneycomb(exportRequest);
     }
 
-    private async Task<string> GenerateSampleKeyFromTraceAttributes(IEnumerable<SpanRecord> spanRecords)
+    private static List<KeyValuePair<string, object>> GetAllAttributesAsList(IEnumerable<SpanRecord> spanRecords)
     {
-        var attributes = new List<KeyValuePair<string, AnyValue>>();
+        var attributes = new List<KeyValuePair<string, object>>();
         attributes.AddRange(
             spanRecords.SelectMany(rs => rs.Resource.Attributes)
-                 .Select(kv => new KeyValuePair<string, AnyValue>(kv.Key, kv.Value)));
+                 .Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)));
         attributes.AddRange(spanRecords.SelectMany(rs => rs.Spans)
                                   .SelectMany(s => s.Attributes)
-                                  .Select(kv => new KeyValuePair<string, AnyValue>(kv.Key, kv.Value)));
+                                  .Select(kv => new KeyValuePair<string, object>(kv.Key, kv.Value)));
 
-        return await _samplerKeyGenerator.GenerateKey(attributes);
+        return attributes;
     }
 }

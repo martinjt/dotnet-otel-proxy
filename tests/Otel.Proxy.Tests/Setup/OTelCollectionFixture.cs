@@ -19,7 +19,7 @@ public class OTelFixture
     public readonly HoneycombTestOutputHelper LinkOutputWriter;
     private const string ServiceName = "otel-proxy-tests";
 
-    public TracerProvider? TracerProvider = Sdk.CreateTracerProviderBuilder()
+    public static TracerProvider? TracerProvider = Sdk.CreateTracerProviderBuilder()
         .ConfigureResource(r => r
             .AddService(ServiceName)
             .AddAttributes(new List<KeyValuePair<string, object>>

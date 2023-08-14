@@ -3,7 +3,7 @@ namespace Otel.Proxy.Interfaces;
 /// <summary>
 /// Defines classes that can get a sample rate for a given key
 /// </summary>
-public interface ISamplerRate
+public interface ISampler
 {
     /// <summary>
     /// Get's the stored sample rate for the given key.
@@ -13,6 +13,8 @@ public interface ISamplerRate
     public Task<double> GetSampleRate(string key);
     
     public Task<bool> ShouldSample(List<KeyValuePair<string, object>> tags);
+
+    public Task<string> GenerateKey(List<KeyValuePair<string, object>> tags);
 }
 
 /// <summary>
@@ -29,7 +31,6 @@ public interface ISamplerRateUpdater
 
 public interface ISamplerKeyGenerator
 {
-    public Task<string> GenerateKey(List<KeyValuePair<string, string>> tags);
 }
 
 

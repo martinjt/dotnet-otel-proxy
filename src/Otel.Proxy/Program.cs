@@ -20,19 +20,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<HoneycombExporter>();
-builder.Services.AddSingleton<ITraceProcessor>(sp => {
-    var processorSettings = sp.GetRequiredService<IOptions<ProcessingSettings>>();
-    if (processorSettings.Value.TraceProcessor == ProcessingSettings.ProcessingType.AverageRate)
-        return new AverageRateSamplingTraceProcessor(
-            sp.GetRequiredService<ITraceRepository>(),
-            new GenericSampleKeyGenerator(new HashSet<string> { "http.method", "http.status_code" }),
-            new InMemoryAverageRateSampler(20),
-            sp.GetRequiredService<HoneycombExporter>());
-    
-    return new NoSamplingTraceProcessor(
-        sp.GetRequiredService<ITraceRepository>(),
-        sp.GetRequiredService<HoneycombExporter>());
-});
+builder.Services.AddSingleton<ITraceProcessor, SamplingTraceProcessor>();
+builder.Services.AddSamplers();
 builder.Services.AddSingleton<InMemoryTraceStore>();
 builder.Services.AddSingleton<TenantInMemoryStoreAccessor>();
 builder.Services.AddSingleton<ITraceRepository>(sp =>

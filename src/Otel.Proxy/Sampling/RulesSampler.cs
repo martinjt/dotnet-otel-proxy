@@ -41,7 +41,7 @@ public class BaseConditionsSampler
     }
 }
 
-public class RulesSampler : BaseConditionsSampler, ISamplerRate
+public class RulesSampler : BaseConditionsSampler, ISampler
 {
     private double _sampleRate;
 
@@ -49,6 +49,11 @@ public class RulesSampler : BaseConditionsSampler, ISamplerRate
         : base(conditions.ToList())
     {
         _sampleRate = sampleRate;
+    }
+
+    public Task<string> GenerateKey(List<KeyValuePair<string, object>> tags)
+    {
+        return Task.FromResult(string.Empty);
     }
 
     public Task<double> GetSampleRate(string key)

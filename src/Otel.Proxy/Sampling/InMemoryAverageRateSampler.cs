@@ -1,14 +1,18 @@
-﻿namespace Otel.Proxy.Sampling;
-public class InMemoryAverageRateSampler : BaseConditionsSampler, ISamplerRate, ISamplerRateUpdater
+﻿using OpenTelemetry.Proto.Common.V1;
+
+namespace Otel.Proxy.Sampling;
+public class InMemoryAverageRateSampler : BaseConditionsSampler, ISampler, ISamplerRateUpdater
 {
     public double GoalSampleRate { get; }
     
     private Dictionary<string, SampleKeyInformation> _sampleRates = new();
+    private readonly HashSet<string> _attributesToUseForKey;
 
-    public InMemoryAverageRateSampler(int goalSampleRate)
+    public InMemoryAverageRateSampler(int goalSampleRate, HashSet<string> attributesToUseForKey)
         : base(Enumerable.Empty<SampleCondition>())
     {
         GoalSampleRate = goalSampleRate;
+        _attributesToUseForKey = attributesToUseForKey;
     }
     public Task<double> GetSampleRate(string key)
     {
@@ -79,6 +83,15 @@ public class InMemoryAverageRateSampler : BaseConditionsSampler, ISamplerRate, I
         }
     }
 
+    public Task<string> GenerateKey(List<KeyValuePair<string, object>> tags)
+    {
+        var key = string.Join("|", tags
+            .Where(x => _attributesToUseForKey.Contains(x.Key))
+            .Select(x => x.Value is AnyValue ? ((AnyValue)x.Value).GetValueAsObject() : x.Value)
+            .OrderBy(x => x));
+
+        return Task.FromResult(key);
+    }
 }
 
 internal class SampleKeyInformation
