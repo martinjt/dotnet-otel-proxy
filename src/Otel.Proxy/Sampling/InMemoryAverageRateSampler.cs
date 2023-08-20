@@ -1,48 +1,50 @@
 ﻿using OpenTelemetry.Proto.Common.V1;
 
 namespace Otel.Proxy.Sampling;
-public class InMemoryAverageRateSampler : BaseConditionsSampler, ISampler, ISamplerRateUpdater
+public class AverageRateSampler : BaseConditionsSampler, ISampler, ISamplerRateUpdater
 {
     public double GoalSampleRate { get; }
 
     public string Name { get; }
 
-    private Dictionary<string, SampleKeyInformation> _sampleRates = new();
+    private readonly IAverageRateSamplerStore _samplerStore;
     private readonly HashSet<string> _attributesToUseForKey;
 
-    public InMemoryAverageRateSampler(string name, int goalSampleRate, HashSet<string> attributesToUseForKey)
+    public AverageRateSampler(IAverageRateSamplerStore samplerStore, string name, int goalSampleRate, HashSet<string> attributesToUseForKey)
         : base(Enumerable.Empty<SampleCondition>())
     {
+        _samplerStore = samplerStore;
         Name = name;
         GoalSampleRate = goalSampleRate;
         _attributesToUseForKey = attributesToUseForKey;
     }
-    public Task<double> GetSampleRate(string key)
+    public async Task<double> GetSampleRate(string key)
     {
-        if (!_sampleRates.ContainsKey(key))
-            _sampleRates.Add(key, new SampleKeyInformation { SampleRate = GoalSampleRate, CountOfInstances = 1 });
-        else
-            _sampleRates[key].CountOfInstances++;
-
-        return Task.FromResult(_sampleRates[key].SampleRate);
+        var sampleKeyInfo = await _samplerStore.GetSampleKeyInformation(key);
+        return sampleKeyInfo.SampleRate;
     }
 
-    public Task UpdateAllSampleRates()
+    public async Task UpdateAllSampleRates()
     {
-        var totalNumberOfTraces = _sampleRates.Values.Sum(x => x.CountOfInstances);
-        var log10OfAllInstances = _sampleRates.Values.Sum(x => Math.Log10(x.CountOfInstances));
+        var sampleRates = await _samplerStore.GetAndResetSampleKeyInformation();
+        var totalNumberOfTraces = sampleRates.Sum(x => x.CountOfInstances);
+        var log10OfAllInstances = sampleRates.Sum(x => Math.Log10(x.CountOfInstances));
 
         var goalCount = totalNumberOfTraces / GoalSampleRate;
         var goalRatio = goalCount / log10OfAllInstances;
 
-        CalculateSampleRates(goalRatio);
-
-        return Task.CompletedTask;
+        var newSampleRates = CalculateSampleRates(
+            sampleRates.ToDictionary(sr => sr.Key),
+            goalRatio);
+        
+        await _samplerStore.UpdateAllSampleRates(newSampleRates.Values);
     }
 
-    private void CalculateSampleRates(double goalRatio)
+    private static Dictionary<string, SampleKeyInformation> CalculateSampleRates(
+        Dictionary<string, SampleKeyInformation> sampleRates,
+        double goalRatio)
     {
-        var sortedKeysAlphabetically = _sampleRates.Keys
+        var sortedKeysAlphabetically = sampleRates.Keys
             .OrderBy(x => x)
             .ToList();
 
@@ -53,7 +55,7 @@ public class InMemoryAverageRateSampler : BaseConditionsSampler, ISampler, ISamp
         {
             // This code needs refactoring now that the tests are in.
 
-            var count = Math.Max(1, _sampleRates[key].CountOfInstances);
+            var count = Math.Max(1, sampleRates[key].CountOfInstances);
             var goalForKey = Math.Max(1, Math.Log10(count) * goalRatio);
             var extraForKey = extra / keysRemaining;
     		goalForKey += extraForKey;
@@ -63,9 +65,10 @@ public class InMemoryAverageRateSampler : BaseConditionsSampler, ISampler, ISamp
             if (count <= goalForKey) {
                 // there are fewer samples than the allotted number for this key. set
                 // sample rate to 1 and redistribute the unused slots for future keys
-                newSampleRates[key] = new SampleKeyInformation { 
+                newSampleRates[key] = new SampleKeyInformation {
+                    Key = key,
                     SampleRate = 1,
-                    CountOfInstances = _sampleRates[key].CountOfInstances 
+                    CountOfInstances = sampleRates[key].CountOfInstances 
                 };
                 extra += goalForKey - count;
             } else {
@@ -75,30 +78,21 @@ public class InMemoryAverageRateSampler : BaseConditionsSampler, ISampler, ISamp
                 // if counts are <= 1 we can get values for goalForKey that are +Inf
                 // and subsequent division ends up with NaN. If that's the case,
                 // fall back to 1
-                newSampleRates[key] = new SampleKeyInformation { SampleRate = rate, CountOfInstances = _sampleRates[key].CountOfInstances  };
+                newSampleRates[key] = new SampleKeyInformation { Key = key, SampleRate = rate, CountOfInstances = sampleRates[key].CountOfInstances  };
 	    		extra += goalForKey - (count / newSampleRates[key].SampleRate);
     		}
         }
 
-        lock(_sampleRates) {
-            foreach (var key in newSampleRates.Keys)
-                _sampleRates[key].SampleRate = newSampleRates[key].SampleRate;
-        }
+        return newSampleRates;
     }
 
     public Task<string> GenerateKey(List<KeyValuePair<string, object>> tags)
     {
         var key = string.Join("|", tags
             .Where(x => _attributesToUseForKey.Contains(x.Key))
-            .Select(x => x.Value is AnyValue ? ((AnyValue)x.Value).GetValueAsObject() : x.Value)
+            .Select(x => x.Value is AnyValue value ? value.GetValueAsObject() : x.Value)
             .OrderBy(x => x));
 
         return Task.FromResult(key);
     }
-}
-
-internal class SampleKeyInformation
-{
-    public double SampleRate { get; internal set; }
-    public int CountOfInstances { get; internal set; }
 }

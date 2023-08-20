@@ -27,9 +27,27 @@ public class BaseConditionsSampler
                     decision = false;
                     break;
                 }
+            if (sampleCondition.Operator == ConditionsOperator.GreaterThanOrEqualTo && 
+                existingTags.Contains(sampleCondition.Key) && 
+                !GreaterThanOrEqualTo(sampleCondition, tags.FirstOrDefault(x => x.Key == sampleCondition.Key).Value))
+                {
+                    decision = false;
+                    break;
+                }
         }
 
         return Task.FromResult(decision);
+    }
+
+    private bool GreaterThanOrEqualTo(SampleCondition sampleCondition, object value)
+    {
+        if (sampleCondition.Value is int intValue)
+            return intValue > (int)value;
+
+        if (sampleCondition.Value is double doubleValue)
+            return doubleValue > (double)value;
+
+        return false;
     }
 
     private bool Equals(SampleCondition condition, object value)

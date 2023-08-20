@@ -2,8 +2,8 @@ namespace Otel.Proxy.Tests.Sampling;
 
 public class AverageRateSamplerTests
 {
-    private readonly InMemoryAverageRateSampler _sut
-        = new ("dummy", 20, new());
+    private readonly AverageRateSampler _sut
+        = new (new InMemoryAverageRateSamplerStore(20), "dummy", 20, new());
 
     [Fact]
     public async Task NoDataInSampler_ReturnsDefaultSampleRate()

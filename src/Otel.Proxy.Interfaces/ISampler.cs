@@ -40,5 +40,6 @@ public record SampleCondition(string Key, object Value, ConditionsOperator Opera
 public enum ConditionsOperator
 {
     Unknown,
-    Equals
+    Equals,
+    GreaterThanOrEqualTo
 }

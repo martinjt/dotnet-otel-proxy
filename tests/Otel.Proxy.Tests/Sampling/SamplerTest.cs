@@ -1,3 +1,4 @@
+using System.Net.NetworkInformation;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using Otel.Proxy.Interfaces;
 using Otel.Proxy.Tests.Setup;
@@ -20,9 +21,16 @@ public class SamplerTests : ActivityWrappedBaseTest
             new ("http.status", 500, ConditionsOperator.Equals)
         }, 1);
 
-    private List<ISampler> _defaultSamplers = new () {
-        _keep500Sampler
+    private AverageRateSampler _sampleAtOneInFive =>
+        new AverageRateSampler(new InMemoryAverageRateSamplerStore(20), "Sample at 1 in 5", 5, new HashSet<string> {
+            "http.status", "http.method"
+        });
+
+    private List<ISampler> _defaultSamplers => new() {
+        _keep500Sampler,
+        _sampleAtOneInFive
     };
+
     public SamplerTests(ITestOutputHelper output) 
     {
         otel = new OTelFixture(_defaultSamplers);
