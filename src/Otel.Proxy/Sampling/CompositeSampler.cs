@@ -18,7 +18,7 @@ public class CompositeSampler
     {
         foreach (var sampler in _samplers)
         {
-            if (!await sampler.ShouldSample(attributes))
+            if (await sampler.ShouldSample(attributes))
             {   
                 var key = await sampler.GenerateKey(attributes);
                 var rate = await sampler.GetSampleRate(key);

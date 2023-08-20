@@ -1,74 +1,84 @@
-using System.Net.NetworkInformation;
 using OpenTelemetry.Proto.Collector.Trace.V1;
-using Otel.Proxy.Interfaces;
 using Otel.Proxy.Tests.Setup;
 using Otel.Proxy.Tests.TraceGenerators;
 using Xunit.Abstractions;
 
-namespace Otel.Proxy.Tests;
-
-public class SamplerTests : ActivityWrappedBaseTest
+namespace Otel.Proxy.Tests.Sampling;
+public class DryRunSamplerTests : ActivityWrappedBaseTest, IClassFixture<SamplingClassFixture>
 {
-    private readonly OTelFixture otel;
     private readonly HttpClient Api;
+    private readonly SamplingClassFixture _fixture;
     private const string SampleRuleKey = "meta.sample.reason";
     private const string SampleRateAttributeName = "SampleRate";
     private List<ExportTraceServiceRequest> RecordedExportRequests 
-        => otel.Server.ReceivedExportRequests;
+        => _fixture.Server.ReceivedExportRequests;
 
-    private static readonly ConsistentRateSampler _keep500Sampler = 
-        new ConsistentRateSampler("Keep 500s", new List<SampleCondition> {
-            new ("http.status", 500, ConditionsOperator.Equals)
-        }, 1);
-
-    private AverageRateSampler _sampleAtOneInFive =>
-        new AverageRateSampler(new InMemoryAverageRateSamplerStore(20), "Sample at 1 in 5", 5, new HashSet<string> {
-            "http.status", "http.method"
-        });
-
-    private List<ISampler> _defaultSamplers => new() {
-        _keep500Sampler,
-        _sampleAtOneInFive
-    };
-
-    public SamplerTests(ITestOutputHelper output) 
+    public DryRunSamplerTests(SamplingClassFixture fixture, ITestOutputHelper output) 
     {
-        otel = new OTelFixture(_defaultSamplers);
-        Api = otel.Server.CreateHTTPClient();
+        _fixture = fixture;
+        Api = _fixture.Server.CreateHTTPClient();
         SetTraceHeadersOnHttpClient(Api);
     }
 
     [Fact]
-    public async Task SampledTrace_AllSpansShouldHaveSamplerNameAsAttribute()
+    public async Task TraceWithAttributesThatDontMatchFirstSamplerCondition_UsesNextSampler()
     {
-        var trace = new TraceModel
+        var nonMatchingStatusCode = 200;
+        var traceWhichDoesntMatchSamplingRules = new TraceModel
         {
             RootSpan = new SpanModel {
-                Attributes = { {"http.status", 500} }
+                Attributes = { {"http.status", nonMatchingStatusCode} }
             },
             ChildSpans = { new SpanModel() }
         };
 
-        await Api.PostTracesAsExportRequest(trace);
+        await Api.PostTracesAsExportRequest(traceWhichDoesntMatchSamplingRules);
 
         var exportedData = RecordedExportRequests.First();
     
         exportedData.GetAllSpansAsList()
-            .AllSpansShouldHaveAttribute(SampleRuleKey, _keep500Sampler.Name);
+            .AllSpansShouldHaveAttribute(SampleRuleKey, _fixture.SampleAllAtOneInFiveFor200s.Name);
+    }
+
+    [Fact]
+    public async Task TraceMatchingSamplingRule_AllSpansShouldHaveCorrespondingSamplerNameAsAttribute()
+    {
+        var traceWhichMatchingSamplingRule = new TraceModel
+        {
+            RootSpan = new SpanModel {
+                Attributes = { 
+                    _fixture
+                    .Keep500StatusCodesSampler
+                    .ConditionsAsDictionary()
+                }
+            },
+            ChildSpans = { new SpanModel() }
+        };
+
+        await Api.PostTracesAsExportRequest(traceWhichMatchingSamplingRule);
+
+        var exportedData = RecordedExportRequests.First();
+    
+        exportedData.GetAllSpansAsList()
+            .AllSpansShouldHaveAttribute(SampleRuleKey, _fixture.Keep500StatusCodesSampler.Name);
     }
 
     [Fact]
     public async Task SampledTrace_AllSpansShouldHaveSamplerRateAsAttribute()
     {
-        var trace = new TraceModel
+        var traceWhichMatchingSamplingRule = new TraceModel
         {
             RootSpan = new SpanModel {
-                Attributes = { {"http.status", 500} }
+                Attributes = { 
+                    _fixture
+                    .Keep500StatusCodesSampler
+                    .ConditionsAsDictionary()
+                }
             },
             ChildSpans = { new SpanModel() }
         };
 
-        await Api.PostTracesAsExportRequest(trace);
+        await Api.PostTracesAsExportRequest(traceWhichMatchingSamplingRule);
 
         var exportedData = RecordedExportRequests.First();
     

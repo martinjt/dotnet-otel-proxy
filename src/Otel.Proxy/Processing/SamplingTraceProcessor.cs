@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Trace.V1;
@@ -11,18 +12,22 @@ internal class SamplingTraceProcessor : ITraceProcessor
     private readonly ITraceRepository _traceRepository;
     private readonly CompositeSampler _compositeSampler;
     private readonly HoneycombExporter _honeycombExporter;
+    private readonly IOptions<ProcessingSettings> _processingSettings;
     private const string SampleRateAttributeName = "SampleRate";
     private const string SamplerReasonAttributeName = "meta.sample.reason";
     private const string SampleKeyAttributeName = "meta.sample.key";
+    private const string SampleDecisionAttributeName = "meta.sample.decision";
 
     public SamplingTraceProcessor(
         ITraceRepository traceRepository,
         CompositeSampler compositeSampler,
-        HoneycombExporter honeycombExporter)
+        HoneycombExporter honeycombExporter,
+        IOptions<ProcessingSettings> processingSettings)
     {
         _traceRepository = traceRepository;
         _compositeSampler = compositeSampler;
         _honeycombExporter = honeycombExporter;
+        _processingSettings = processingSettings;
     }
 
     public async Task ProcessTrace(byte[] traceId)
@@ -35,12 +40,19 @@ internal class SamplingTraceProcessor : ITraceProcessor
 
             var (sampleRateForKey, key, samplerName) = await _compositeSampler.GetSampleRate(attributes);
 
-            if (sampleRateForKey == KeepAllTraces ||
-                _random.NextInt64(1, sampleRateForKey) == 1)
+            trace.AddAttributeToAllSpans(SampleRateAttributeName, sampleRateForKey);
+            trace.AddAttributeToAllSpans(SamplerReasonAttributeName, samplerName);
+            trace.AddAttributeToAllSpans(SampleKeyAttributeName, key);
+
+            var shouldTraceBeSampled = 
+                sampleRateForKey == KeepAllTraces ||
+                _random.NextInt64(1, sampleRateForKey) == 1;
+
+            if (shouldTraceBeSampled || _processingSettings.Value.DryRunEnabled)
             {
-                trace.AddAttributeToAllSpans(SampleRateAttributeName, sampleRateForKey);
-                trace.AddAttributeToAllSpans(SamplerReasonAttributeName, samplerName);
-                trace.AddAttributeToAllSpans(SampleKeyAttributeName, key);
+                if (_processingSettings.Value.DryRunEnabled)
+                    trace.AddAttributeToAllSpans(SampleDecisionAttributeName, 
+                        shouldTraceBeSampled ? "sample" : "discard");
                 await SendTrace(trace, sampleRateForKey);
             }
         }

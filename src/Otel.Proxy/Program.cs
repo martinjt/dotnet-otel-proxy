@@ -59,5 +59,6 @@ public class ProcessingSettings
         AverageRate = 1
     }
 
+    public bool DryRunEnabled { get; set; } = true;
     public ProcessingType TraceProcessor { get; set; }
 }

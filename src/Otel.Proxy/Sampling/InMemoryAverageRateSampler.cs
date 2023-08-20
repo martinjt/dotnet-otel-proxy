@@ -4,14 +4,17 @@ namespace Otel.Proxy.Sampling;
 public class AverageRateSampler : BaseConditionsSampler, ISampler, ISamplerRateUpdater
 {
     public double GoalSampleRate { get; }
-
     public string Name { get; }
-
     private readonly IAverageRateSamplerStore _samplerStore;
     private readonly HashSet<string> _attributesToUseForKey;
 
     public AverageRateSampler(IAverageRateSamplerStore samplerStore, string name, int goalSampleRate, HashSet<string> attributesToUseForKey)
-        : base(Enumerable.Empty<SampleCondition>())
+        : this(samplerStore, name, goalSampleRate, attributesToUseForKey, Enumerable.Empty<SampleCondition>())
+    {
+    }
+
+    public AverageRateSampler(IAverageRateSamplerStore samplerStore, string name, int goalSampleRate, HashSet<string> attributesToUseForKey, IEnumerable<SampleCondition> conditions)
+        : base(conditions.ToList())
     {
         _samplerStore = samplerStore;
         Name = name;

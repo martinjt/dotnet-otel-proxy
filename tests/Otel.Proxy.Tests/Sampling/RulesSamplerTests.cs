@@ -39,7 +39,7 @@ public class RulesSamplerTests
     public async Task SamplerWithOneEqualsCondition_WithMatchingTagValue_ReturnsTrue()
     {
         var sut = new ConsistentRateSampler("dummy",
-            new[] { new SampleCondition("service.name", "my-service-name", ConditionsOperator.Equals)
+            new[] { new SampleCondition("service.name", "my-service-name", ConditionsOperator.EqualTo)
         }, 11);
 
         var sampleDecision =  await sut.ShouldSample(_defaultTagList);
@@ -51,7 +51,7 @@ public class RulesSamplerTests
     public async Task SamplerWithOneEqualsCondition_WithMatchingTagWithIncorrectValue_ReturnsFalse()
     {
         var sut = new ConsistentRateSampler("dummy", new[] { 
-            new SampleCondition("service.name", "non-matching-service-name", ConditionsOperator.Equals)
+            new SampleCondition("service.name", "non-matching-service-name", ConditionsOperator.EqualTo)
         }, 11);
 
         var sampleDecision =  await sut.ShouldSample(_defaultTagList);
