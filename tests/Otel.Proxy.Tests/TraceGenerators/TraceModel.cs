@@ -15,7 +15,7 @@ public class SpanModel
     public ServiceModel Service { get; set; } = new ServiceModel();
     public ActivitySpanId SpanId { get; set; } = ActivitySpanId.CreateRandom();
     public ActivitySpanId? ParentSpanId { get; set; } = null;
-    public Dictionary<string,string> Attributes { get; set; } = new();
+    public Dictionary<string,object> Attributes { get; set; } = new();
     public List<SpanModel> ChildSpans { get; set; } = new();
 }
 
@@ -23,5 +23,5 @@ public class ServiceModel
 {
     public Guid CorrelationForTestBuilder { get; } = Guid.NewGuid(); 
     public string Name { get; set; } = Guid.NewGuid().ToString();
-    public Dictionary<string,string> Attributes { get; set; } = new();
+    public Dictionary<string,object> Attributes { get; set; } = new();
 }

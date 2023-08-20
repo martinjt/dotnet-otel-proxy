@@ -14,16 +14,17 @@ public class CompositeSampler
         SamplingActive = _samplers.Any();
     }
 
-    public async Task<double> GetSampleRate(List<KeyValuePair<string, object>> attributes)
+    public async Task<(int sampleRate, string key, string ruleName)> GetSampleRate(List<KeyValuePair<string, object>> attributes)
     {
         foreach (var sampler in _samplers)
         {
             if (!await sampler.ShouldSample(attributes))
             {   
                 var key = await sampler.GenerateKey(attributes);
-                return await sampler.GetSampleRate(key);
+                var rate = await sampler.GetSampleRate(key);
+                return ((int)rate, key, sampler.Name);
             }
         }
-        return _defaultSampleRate;
+        return (_defaultSampleRate, "", "default");
     }
 }

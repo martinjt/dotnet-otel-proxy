@@ -46,7 +46,14 @@ public static class ExportTraceServiceRequestBuilder
                     service.Key.Attributes.Select(a => new KeyValue
                     {
                         Key = a.Key,
-                        Value = new AnyValue { StringValue = a.Value }
+                        Value = a.Value switch {
+                            int i => new AnyValue { IntValue = i },
+                            long l => new AnyValue { IntValue = l },
+                            float f => new AnyValue { DoubleValue = f },
+                            double d => new AnyValue { DoubleValue = d },
+                            bool b => new AnyValue { BoolValue = b },
+                            _ => new AnyValue { StringValue = a.Value.ToString() }
+                        }
                     })
                 }
             };
@@ -68,7 +75,14 @@ public static class ExportTraceServiceRequestBuilder
                         s.Attributes.Select(a => new KeyValue
                         {
                             Key = a.Key,
-                            Value = new AnyValue { StringValue = a.Value }
+                            Value = a.Value switch {
+                                int i => new AnyValue { IntValue = i },
+                                long l => new AnyValue { IntValue = l },
+                                float f => new AnyValue { DoubleValue = f },
+                                double d => new AnyValue { DoubleValue = d },
+                                bool b => new AnyValue { BoolValue = b },
+                                _ => new AnyValue { StringValue = a.Value.ToString() }
+                            }
                         })
                     }
                 };

@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using Otel.Proxy.Tests.TraceGenerators;
 using ProtoBuf;
+using Shouldly;
 
 namespace Otel.Proxy.Tests.Setup;
 
@@ -16,7 +17,9 @@ internal static class ProxyExtensions
         content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
         if (tenantId != null)
             content.Headers.Add("x-tenant-id", tenantId);
-        return await httpClient.PostAsync("/v1/traces", content);
+        var result = await httpClient.PostAsync("/v1/traces", content);
+        result.IsSuccessStatusCode.ShouldBeTrue("Error Posting Export Request" + Environment.NewLine + await result.Content.ReadAsStringAsync());
+        return result;
     }
 
     public static async Task<HttpResponseMessage> PostTracesAsExportRequest(this HttpClient httpClient, TraceModel trace, string? tenantId = null!)

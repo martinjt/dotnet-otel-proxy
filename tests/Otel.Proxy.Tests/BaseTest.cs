@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Trace;
+using Otel.Proxy.Tests.Setup;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -12,8 +13,12 @@ public abstract class ActivityWrappedBaseTest : IAsyncLifetime
 {
     public static readonly ActivitySource Source = new("Tests");
     protected readonly Activity? _testActivity;
+    private readonly TracerProvider _ensureTracerProviderIsBuilt = OTelFixture.TracerProvider!;
     public ActivityWrappedBaseTest()
     {
+        if (_ensureTracerProviderIsBuilt == null)
+            throw new XunitException("TracerProvider is null");
+
         _testActivity = Source.StartActivity("Test Started");
     }
 

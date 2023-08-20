@@ -4,9 +4,9 @@ using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Otel.Proxy.Interfaces;
-using Otel.Proxy.Tests;
-using Otel.Proxy.Tests.Setup;
 using Xunit.Abstractions;
+
+namespace Otel.Proxy.Tests.Setup;
 
 [CollectionDefinition(Name)]
 public class NoSamplingCollection : ICollectionFixture<NoSamplingOtelFixture>
@@ -37,7 +37,7 @@ public class OTelFixture
                     new("test.start_time", DateTime.UtcNow.ToString("O")),
                     new("test.start_ticks", DateTime.UtcNow.Ticks)
                 }))
-        .AddSource(BaseTest.Source.Name)
+        .AddSource(ActivityWrappedBaseTest.Source.Name)
         .SetSampler<AlwaysOnSampler>()
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()

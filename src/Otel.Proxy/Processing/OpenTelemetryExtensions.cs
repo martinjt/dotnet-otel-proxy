@@ -52,5 +52,29 @@ namespace Otel.Proxy.Processing
 
             return value!;
         }
-    }
+
+        public static void AddAttributeToAllSpans(this IEnumerable<SpanRecord> trace, string key, object value)
+        {
+            var keyValue = new KeyValue
+            {
+                Key = key,
+                Value = new AnyValue()
+            };
+            switch (value)
+            {
+                case string s:
+                    keyValue.Value.StringValue = s;
+                    break;
+                case int i:
+                    keyValue.Value.IntValue = i;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+            foreach (var span in trace)
+            {
+                span.Spans.ForEach(s => s.Attributes.Add(keyValue));
+            }
+        }
+}
 }

@@ -11,6 +11,9 @@ internal class SamplingTraceProcessor : ITraceProcessor
     private readonly ITraceRepository _traceRepository;
     private readonly CompositeSampler _compositeSampler;
     private readonly HoneycombExporter _honeycombExporter;
+    private const string SampleRateAttributeName = "SampleRate";
+    private const string SamplerReasonAttributeName = "meta.sample.reason";
+    private const string SampleKeyAttributeName = "meta.sample.key";
 
     public SamplingTraceProcessor(
         ITraceRepository traceRepository,
@@ -30,11 +33,14 @@ internal class SamplingTraceProcessor : ITraceProcessor
         {
             var attributes = GetAllAttributesAsList(trace);
 
-            var sampleRateForKey = await _compositeSampler.GetSampleRate(attributes);
+            var (sampleRateForKey, key, samplerName) = await _compositeSampler.GetSampleRate(attributes);
 
-            if (sampleRateForKey != KeepAllTraces &&
-                _random.NextInt64(1, (int)sampleRateForKey) == 1)
+            if (sampleRateForKey == KeepAllTraces ||
+                _random.NextInt64(1, sampleRateForKey) == 1)
             {
+                trace.AddAttributeToAllSpans(SampleRateAttributeName, sampleRateForKey);
+                trace.AddAttributeToAllSpans(SamplerReasonAttributeName, samplerName);
+                trace.AddAttributeToAllSpans(SampleKeyAttributeName, key);
                 await SendTrace(trace, sampleRateForKey);
             }
         }
