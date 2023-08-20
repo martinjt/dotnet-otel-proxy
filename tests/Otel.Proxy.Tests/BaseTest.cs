@@ -37,7 +37,7 @@ public abstract class ActivityWrappedBaseTest : IAsyncLifetime
     }
 }
 [UpdateActivityWithTestName]
-[Collection(OTelCollection.Name)]
+[Collection(NoSamplingCollection.Name)]
 public abstract class BaseTest : ActivityWrappedBaseTest, IAsyncLifetime
 {
     internal readonly HttpClient Api;

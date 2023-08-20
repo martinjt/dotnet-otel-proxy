@@ -3,14 +3,23 @@ using Microsoft.Extensions.Configuration;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Otel.Proxy.Interfaces;
 using Otel.Proxy.Tests;
 using Otel.Proxy.Tests.Setup;
 using Xunit.Abstractions;
 
 [CollectionDefinition(Name)]
-public class OTelCollection : ICollectionFixture<OTelFixture>
+public class NoSamplingCollection : ICollectionFixture<NoSamplingOtelFixture>
 {
     public const string Name = "OtelCollection";
+}
+
+public class NoSamplingOtelFixture : OTelFixture
+{
+    public NoSamplingOtelFixture() 
+        : base(new List<ISampler>())
+    {
+    }
 }
 
 public class OTelFixture
@@ -43,9 +52,9 @@ public class OTelFixture
         })
         .Build();
 
-    public OTelFixture()
+    public OTelFixture(List<ISampler> samplers = null!)
     {
-        Server = new OtelProxyAppFactory(TracerProvider);
+        Server = new OtelProxyAppFactory(TracerProvider, samplers);
         var configuration = new ConfigurationBuilder()
             .AddJsonFile("appsettings.Test.json")
             .AddEnvironmentVariables()

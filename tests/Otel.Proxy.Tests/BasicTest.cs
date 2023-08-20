@@ -10,7 +10,7 @@ namespace Otel.Proxy.Tests;
 
 public class SuccessTests : BaseTest
 {
-    public SuccessTests(OTelFixture fixture, ITestOutputHelper testOutputHelper)
+    public SuccessTests(NoSamplingOtelFixture fixture, ITestOutputHelper testOutputHelper)
         : base(fixture, testOutputHelper)
     {
 

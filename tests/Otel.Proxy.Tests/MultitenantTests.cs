@@ -9,7 +9,7 @@ namespace Otel.Proxy.Tests;
 
 public class MultitenantTests : BaseTest
 {
-    public MultitenantTests(OTelFixture fixture, ITestOutputHelper testOutputHelper) 
+    public MultitenantTests(NoSamplingOtelFixture fixture, ITestOutputHelper testOutputHelper) 
         : base(fixture, testOutputHelper)
     {
 
