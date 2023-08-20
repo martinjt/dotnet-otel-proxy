@@ -10,7 +10,7 @@ internal static class SamplingSetupExtensions
             var processorSettings = sp.GetRequiredService<IOptions<ProcessingSettings>>();
             var samplerList = new List<ISampler>();
             if (processorSettings.Value.TraceProcessor == ProcessingSettings.ProcessingType.AverageRate)
-                samplerList.Add(new InMemoryAverageRateSampler(20, 
+                samplerList.Add(new InMemoryAverageRateSampler("default sampler", 20, 
                     new HashSet<string> { "http.method", "http.status_code" }));
             
             return new CompositeSampler(samplerList);

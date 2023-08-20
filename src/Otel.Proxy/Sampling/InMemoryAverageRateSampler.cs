@@ -4,13 +4,16 @@ namespace Otel.Proxy.Sampling;
 public class InMemoryAverageRateSampler : BaseConditionsSampler, ISampler, ISamplerRateUpdater
 {
     public double GoalSampleRate { get; }
-    
+
+    public string Name { get; }
+
     private Dictionary<string, SampleKeyInformation> _sampleRates = new();
     private readonly HashSet<string> _attributesToUseForKey;
 
-    public InMemoryAverageRateSampler(int goalSampleRate, HashSet<string> attributesToUseForKey)
+    public InMemoryAverageRateSampler(string name, int goalSampleRate, HashSet<string> attributesToUseForKey)
         : base(Enumerable.Empty<SampleCondition>())
     {
+        Name = name;
         GoalSampleRate = goalSampleRate;
         _attributesToUseForKey = attributesToUseForKey;
     }

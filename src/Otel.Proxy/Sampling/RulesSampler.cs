@@ -41,13 +41,15 @@ public class BaseConditionsSampler
     }
 }
 
-public class RulesSampler : BaseConditionsSampler, ISampler
+public class ConsistentRateSampler : BaseConditionsSampler, ISampler
 {
-    private double _sampleRate;
+    private readonly double _sampleRate;
+    public string Name { get; }
 
-    public RulesSampler(IEnumerable<SampleCondition> conditions, double sampleRate)
+    public ConsistentRateSampler(string name, IEnumerable<SampleCondition> conditions, double sampleRate)
         : base(conditions.ToList())
     {
+        Name = name;
         _sampleRate = sampleRate;
     }
 

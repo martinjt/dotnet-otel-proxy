@@ -4,9 +4,6 @@ namespace Otel.Proxy.Tests.Sampling;
 
 public class RulesSamplerTests
 {
-    private readonly RulesSampler _sut
-        = new (Enumerable.Empty<SampleCondition>(), 11);
-
     private readonly List<KeyValuePair<string, object>> _defaultTagList = new()  {
          { new("service.name", "my-service-name") },
          { new("http.url", "https://localhost:5001/WeatherForecast") },
@@ -31,7 +28,7 @@ public class RulesSamplerTests
     [Fact]
     public async Task SamplerWithoutConditions_ReturnsTrue()
     {
-        var sut = new RulesSampler(Enumerable.Empty<SampleCondition>(), 11);
+        var sut = new ConsistentRateSampler("dummy", Enumerable.Empty<SampleCondition>(), 11);
 
         var sampleDecision = await sut.ShouldSample(_defaultTagList);
 
@@ -41,8 +38,8 @@ public class RulesSamplerTests
     [Fact]
     public async Task SamplerWithOneEqualsCondition_WithMatchingTagValue_ReturnsTrue()
     {
-        var sut = new RulesSampler(new[] { 
-            new SampleCondition("service.name", "my-service-name", ConditionsOperator.Equals)
+        var sut = new ConsistentRateSampler("dummy",
+            new[] { new SampleCondition("service.name", "my-service-name", ConditionsOperator.Equals)
         }, 11);
 
         var sampleDecision =  await sut.ShouldSample(_defaultTagList);
@@ -53,7 +50,7 @@ public class RulesSamplerTests
     [Fact]
     public async Task SamplerWithOneEqualsCondition_WithMatchingTagWithIncorrectValue_ReturnsFalse()
     {
-        var sut = new RulesSampler(new[] { 
+        var sut = new ConsistentRateSampler("dummy", new[] { 
             new SampleCondition("service.name", "non-matching-service-name", ConditionsOperator.Equals)
         }, 11);
 

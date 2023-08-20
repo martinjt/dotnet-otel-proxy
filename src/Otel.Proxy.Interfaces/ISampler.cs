@@ -5,6 +5,7 @@ namespace Otel.Proxy.Interfaces;
 /// </summary>
 public interface ISampler
 {
+    public string Name { get; }
     /// <summary>
     /// Get's the stored sample rate for the given key.
     /// </summary>
