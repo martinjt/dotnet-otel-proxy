@@ -1,6 +1,6 @@
 using Otel.Proxy.Interfaces;
 
-namespace Otel.Proxy.Tests.Sampling;
+namespace Otel.Proxy.Tests.SamplerTests;
 
 public class RulesSamplerTests
 {

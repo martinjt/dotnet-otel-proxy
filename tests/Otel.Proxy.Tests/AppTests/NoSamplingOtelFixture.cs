@@ -4,9 +4,10 @@ using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Otel.Proxy.Interfaces;
+using Otel.Proxy.Tests.Setup;
 using Xunit.Abstractions;
 
-namespace Otel.Proxy.Tests.Setup;
+namespace Otel.Proxy.Tests.AppTests;
 
 [CollectionDefinition(Name)]
 public class NoSamplingCollection : ICollectionFixture<NoSamplingOtelFixture>

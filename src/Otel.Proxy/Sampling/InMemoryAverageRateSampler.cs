@@ -38,14 +38,15 @@ public class AverageRateSampler : BaseConditionsSampler, ISampler, ISamplerRateU
 
         var newSampleRates = CalculateSampleRates(
             sampleRates.ToDictionary(sr => sr.Key),
-            goalRatio);
+            goalRatio,
+            (int)GoalSampleRate);
         
         await _samplerStore.UpdateAllSampleRates(newSampleRates.Values);
     }
 
     private static Dictionary<string, SampleKeyInformation> CalculateSampleRates(
         Dictionary<string, SampleKeyInformation> sampleRates,
-        double goalRatio)
+        double goalRatio, int goalSampleRate)
     {
         var sortedKeysAlphabetically = sampleRates.Keys
             .OrderBy(x => x)
@@ -81,8 +82,11 @@ public class AverageRateSampler : BaseConditionsSampler, ISampler, ISamplerRateU
                 // if counts are <= 1 we can get values for goalForKey that are +Inf
                 // and subsequent division ends up with NaN. If that's the case,
                 // fall back to 1
-                newSampleRates[key] = new SampleKeyInformation { Key = key, SampleRate = rate, CountOfInstances = sampleRates[key].CountOfInstances  };
-	    		extra += goalForKey - (count / newSampleRates[key].SampleRate);
+                if (rate != goalSampleRate)
+                {
+                    newSampleRates[key] = new SampleKeyInformation { Key = key, SampleRate = rate, CountOfInstances = sampleRates[key].CountOfInstances  };
+                }
+                extra += goalForKey - (count / rate);
     		}
         }
 

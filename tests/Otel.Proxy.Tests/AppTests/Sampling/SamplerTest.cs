@@ -1,9 +1,10 @@
 using OpenTelemetry.Proto.Collector.Trace.V1;
+using Otel.Proxy.Tests.Extensions;
 using Otel.Proxy.Tests.Setup;
 using Otel.Proxy.Tests.TraceGenerators;
 using Xunit.Abstractions;
 
-namespace Otel.Proxy.Tests.Sampling;
+namespace Otel.Proxy.Tests.AppTests.Sampling;
 public class DryRunSamplerTests : ActivityWrappedBaseTest, IClassFixture<SamplingClassFixture>
 {
     private readonly HttpClient Api;

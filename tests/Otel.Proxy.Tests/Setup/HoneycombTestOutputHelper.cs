@@ -4,6 +4,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Xunit.Abstractions;
 
+namespace Otel.Proxy.Tests.Setup;
+
 /// <summary>
 /// Writes links to the Honeycomb UI for all root spans to the console
 /// </summary>

@@ -1,46 +1,11 @@
 using System.Diagnostics;
 using System.Reflection;
 using OpenTelemetry.Proto.Collector.Trace.V1;
-using OpenTelemetry.Trace;
 using Otel.Proxy.Tests.Setup;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Otel.Proxy.Tests;
-
-
-public abstract class ActivityWrappedBaseTest : IAsyncLifetime
-{
-    public static readonly ActivitySource Source = new("Tests");
-    protected readonly Activity? _testActivity;
-    private readonly TracerProvider _ensureTracerProviderIsBuilt = OTelFixture.TracerProvider!;
-    public ActivityWrappedBaseTest()
-    {
-        if (_ensureTracerProviderIsBuilt == null)
-            throw new XunitException("TracerProvider is null");
-
-        _testActivity = Source.StartActivity("Test Started");
-    }
-
-    public Task InitializeAsync()
-    {
-        OTelFixture.TracerProvider?.ForceFlush();
-        return Task.CompletedTask;
-    }
-
-    public Task DisposeAsync()
-    {
-        _testActivity?.Stop();
-        OTelFixture.TracerProvider?.ForceFlush();
-        return Task.CompletedTask;
-    }
-    internal void SetTraceHeadersOnHttpClient(HttpClient client)
-    {
-        if (_testActivity != null)
-            client.DefaultRequestHeaders.Add("traceparent", 
-            $"00-{_testActivity.TraceId}-{_testActivity.SpanId}-01");
-    }
-}
+namespace Otel.Proxy.Tests.AppTests;
 [UpdateActivityWithTestName]
 [Collection(NoSamplingCollection.Name)]
 public abstract class BaseTest : ActivityWrappedBaseTest, IAsyncLifetime

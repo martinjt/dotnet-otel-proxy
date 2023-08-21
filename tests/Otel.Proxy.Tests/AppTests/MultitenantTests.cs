@@ -1,10 +1,10 @@
 using System.Diagnostics;
-using Otel.Proxy.Tests.Setup;
+using Otel.Proxy.Tests.Extensions;
 using Otel.Proxy.Tests.TraceGenerators;
 using Shouldly;
 using Xunit.Abstractions;
 
-namespace Otel.Proxy.Tests;
+namespace Otel.Proxy.Tests.AppTests;
 
 
 public class MultitenantTests : BaseTest

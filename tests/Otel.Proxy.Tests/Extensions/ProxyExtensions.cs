@@ -4,7 +4,7 @@ using Otel.Proxy.Tests.TraceGenerators;
 using ProtoBuf;
 using Shouldly;
 
-namespace Otel.Proxy.Tests.Setup;
+namespace Otel.Proxy.Tests.Extensions;
 
 internal static class ProxyExtensions
 {
