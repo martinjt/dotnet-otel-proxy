@@ -9,7 +9,7 @@ services:
     volumes: 
       - cache:/data
     environment:
-      - REDIS_ARGS="--notify-keyspace-events KEx"
+      - REDIS_ARGS=--notify-keyspace-events KEx
 
 volumes:
   cache:
