@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Trace.V1;
+using Otel.Proxy.Setup;
 
 namespace Otel.Proxy.Processing;
 

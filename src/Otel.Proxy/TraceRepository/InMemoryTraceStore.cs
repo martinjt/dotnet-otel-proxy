@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using OpenTelemetry.Proto.Collector.Trace.V1;
-using Otel.Proxy.TraceRepository;
 
 internal class InMemoryTraceStore
 {
@@ -13,14 +12,14 @@ internal class InMemoryTraceStore
             .ScopeSpans.SelectMany(ss => ss.Spans)
             .GroupBy(s => s.TraceId))
             {
-                var traceId = grouping.Key;
+                var traceId = Convert.ToHexString(grouping.Key.ToByteArray());
                 var record = new SpanRecord
                 {
                     Spans = grouping.ToList(),
                     Resource = resourceSpan.Resource
                 };
-                var records = SpanDictionary.GetOrAdd(System.Text.Encoding.UTF8.GetString(traceId.Memory.ToArray()),  
-                    (b) => new ConcurrentBag<SpanRecord>());
+                var records = SpanDictionary.GetOrAdd(traceId,
+                    (b) => []);
                 records.Add(record);
             }
 
@@ -29,7 +28,7 @@ internal class InMemoryTraceStore
 
     public Task<IEnumerable<SpanRecord>> GetTrace(byte[] traceId)
     {
-        if (!SpanDictionary.TryGetValue(System.Text.Encoding.UTF8.GetString(traceId), out var record))
+        if (!SpanDictionary.TryGetValue(Convert.ToHexString(traceId), out var record))
             return Task.FromResult(Enumerable.Empty<SpanRecord>());
         
         return Task.FromResult(record as IEnumerable<SpanRecord>);
@@ -37,7 +36,7 @@ internal class InMemoryTraceStore
 
     internal Task DeleteTrace(byte[] traceId)
     {
-        SpanDictionary.TryRemove(System.Text.Encoding.UTF8.GetString(traceId), out _);
+        SpanDictionary.TryRemove(Convert.ToHexString(traceId), out _);
         return Task.CompletedTask;
     }
 }

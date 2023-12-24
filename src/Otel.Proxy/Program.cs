@@ -16,12 +16,13 @@ builder.Services.AddControllers(o => {
 
 builder.Services.AddGrpc();
 builder.Services.AddOptions<BackendSettings>().Bind(builder.Configuration.GetSection("Backend"));
+builder.Services.AddOptions<ProcessingSettings>().Bind(builder.Configuration.GetSection("Processing"));
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<HoneycombExporter>();
 builder.Services.AddSingleton<ITraceProcessor, SamplingTraceProcessor>();
 builder.Services.AddSamplers();
-builder.Services.AddStorageBackend();
+builder.AddStorageBackend();
 
 var app = builder.Build();
 
@@ -37,4 +38,3 @@ app.Run();
 
 
 public partial class Program { }
-

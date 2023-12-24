@@ -5,6 +5,7 @@ using Otel.Proxy.Tests.TraceGenerators;
 using Xunit.Abstractions;
 
 namespace Otel.Proxy.Tests.AppTests.Sampling;
+
 public class DryRunSamplerTests : ActivityWrappedBaseTest, IClassFixture<SamplingClassFixture>
 {
     private readonly HttpClient Api;

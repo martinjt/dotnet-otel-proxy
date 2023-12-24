@@ -43,7 +43,8 @@ public class OtelProxyAppFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureAppConfiguration(config => {
             config.AddInMemoryCollection(new List<KeyValuePair<string, string?>> {
-               new ("Backend:IsMultiTenant", "true") 
+               new ("Backend:IsMultiTenant", "true"),
+               new ("Backend:Type", "InMemory")
             });
         });
         builder.ConfigureServices(services => {

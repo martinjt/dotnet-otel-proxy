@@ -2,6 +2,8 @@ using Google.Protobuf;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Trace.V1;
 using StackExchange.Redis;
+using Microsoft.Extensions.Options;
+using Otel.Proxy.Setup;
 
 
 namespace Otel.Proxy.TraceRepository;
@@ -9,10 +11,12 @@ namespace Otel.Proxy.TraceRepository;
 internal class RedisTraceRepository : ITraceRepository
 {
     private readonly IDatabase _database;
+    private readonly IOptions<ProcessingSettings> _processingSettings;
 
-    public RedisTraceRepository(IDatabase database)
+    public RedisTraceRepository(IDatabase database, IOptions<ProcessingSettings> processingSettings)
     {
         _database = database;
+        _processingSettings = processingSettings;
     }
 
     public async Task AddSpans(ExportTraceServiceRequest request)
@@ -22,7 +26,7 @@ internal class RedisTraceRepository : ITraceRepository
                 .ScopeSpans.SelectMany(ss => ss.Spans)
                 .GroupBy(s => s.TraceId))
             {
-                var traceId = System.Text.Encoding.UTF8.GetString(grouping.Key.Memory.ToArray());
+                var traceId = Convert.ToHexString(grouping.Key.ToByteArray());
                 if (string.IsNullOrEmpty(traceId))
                     throw new Exception("traceId is null or empty");
 
@@ -39,20 +43,21 @@ internal class RedisTraceRepository : ITraceRepository
 
                 using var ms = new MemoryStream();
                 record.WriteTo(ms);
-                await _database.ListRightPushAsync(traceId, ms.ToArray());
-                await _database.KeyExpireAsync(traceId, TimeSpan.FromSeconds(600));
+                var currentExpiry = await _database.KeyTimeToLiveAsync(traceId);
+                await _database.ListRightPushAsync($"{traceId}:store", ms.ToArray());
+                await _database.KeyExpireAsync($"{traceId}:store", TimeSpan.FromMinutes(_processingSettings.Value.TraceProcessingTimeoutInSeconds));
             }
     }
 
-    public Task DeleteTrace(byte[] traceIdBytes)
+    public async Task DeleteTrace(byte[] traceIdBytes)
     {
-        var traceId = System.Text.Encoding.UTF8.GetString(traceIdBytes);
-        return _database.KeyDeleteAsync(traceId);
+        var traceId = Convert.ToHexString(traceIdBytes);
+        await _database.KeyDeleteAsync(traceId);
     }
 
     public async Task<IEnumerable<SpanRecord>> GetTrace(byte[] traceIdBytes)
     {
-        var traceId = System.Text.Encoding.UTF8.GetString(traceIdBytes);
+        var traceId = Convert.ToHexString(traceIdBytes);
 
         var listResults = await _database.ListRangeAsync(traceId);
 
