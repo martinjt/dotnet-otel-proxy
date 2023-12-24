@@ -1,7 +1,5 @@
-using Microsoft.Extensions.Options;
+using Otel.Proxy.Formatters;
 using Otel.Proxy.Setup;
-using Otel.Proxy.TraceRepository;
-using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(kestrel => {
@@ -9,7 +7,10 @@ builder.WebHost.ConfigureKestrel(kestrel => {
     kestrel.ListenAnyIP(4318);
 });
 
-builder.Services.AddControllers(o => o.InputFormatters.Add(new ProtobufInputFormatter()))
+builder.Services.AddControllers(o => {
+    o.InputFormatters.Add(new ProtobufInputFormatter());
+    o.OutputFormatters.Add(new ProtobufOutputFormatter());
+    })
     .ConfigureApplicationPartManager(o =>
         o.FeatureProviders.Add(new InternalControllerFeatureProvider()));
 
@@ -37,28 +38,3 @@ app.Run();
 
 public partial class Program { }
 
-
-public class BackendSettings
-{
-    public enum BackendType
-    {
-        InMemory,
-        Redis
-    }
-    public bool IsMultiTenant { get; set; } = false;
-    public BackendType Type { get; set; }
-    public string TenantHeader { get; set; } = "x-tenant-id";
-    public string? RedisConnectionString { get; set; } = "localhost:6379";
-}
-
-public class ProcessingSettings
-{
-    public enum ProcessingType
-    {
-        NoSampling = 0,
-        AverageRate = 1
-    }
-
-    public bool DryRunEnabled { get; set; } = true;
-    public ProcessingType TraceProcessor { get; set; }
-}

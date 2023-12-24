@@ -4,6 +4,8 @@ using Google.Protobuf;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.WebUtilities;
 
+namespace Otel.Proxy.Formatters;
+
 public class ProtobufInputFormatter : InputFormatter
 {
     private const string ParserPropertyName = "Parser";
